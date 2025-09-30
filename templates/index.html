@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal2Goal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <div class="logo-container mb-3">
+                <img src="/static/images/goal2goal.jpeg" alt="Goal2Goal Logo" class="main-logo">
+            </div>
+            <p class="lead">Predicción BTTS (Both Teams To Score) con Poisson Bivariado y Regresión Logística</p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3>Datos del partido</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="prediction-form">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="team-container p-3 border rounded bg-light">
+                                        <h4 class="text-center mb-3">Equipo Local</h4>
+                                        <div class="mb-3">
+                                            <label for="team1" class="form-label">Nombre del Equipo 1</label>
+                                            <input type="text" class="form-control" id="team1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="goalsScored1" class="form-label">Goles promedio anotados</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="goalsConceded1" class="form-label">Goles promedio recibidos</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="possession1" class="form-label">Posesión de balón (%)</label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="shotsOnTarget1" class="form-label">Tiros a puerta por partido</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="passingAccuracy1" class="form-label">Precisión de pases (%)</label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="fouls1" class="form-label">Faltas cometidas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="corners1" class="form-label">Promedio de corners</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="yellowCards1" class="form-label">Tarjetas amarillas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="redCards1" class="form-label">Tarjetas rojas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards1" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="team-container p-3 border rounded bg-light">
+                                        <h4 class="text-center mb-3">Equipo Visitante</h4>
+                                        <div class="mb-3">
+                                            <label for="team2" class="form-label">Nombre del Equipo 2</label>
+                                            <input type="text" class="form-control" id="team2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="goalsScored2" class="form-label">Goles promedio anotados</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="goalsConceded2" class="form-label">Goles promedio recibidos</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="possession2" class="form-label">Posesión de balón (%)</label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="shotsOnTarget2" class="form-label">Tiros a puerta por partido</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="passingAccuracy2" class="form-label">Precisión de pases (%)</label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="fouls2" class="form-label">Faltas cometidas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="corners2" class="form-label">Promedio de corners</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="yellowCards2" class="form-label">Tarjetas amarillas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards2" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="redCards2" class="form-label">Tarjetas rojas</label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards2" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg" id="calculate-btn">
+                                    <i class="fas fa-calculator me-2"></i>Calcular Predicción
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-lg ms-2" id="demo-btn">
+                                    <i class="fas fa-vial me-2"></i>Cargar Demo
+                                </button>
+                                <button type="button" class="btn btn-danger btn-lg ms-2" id="clear-btn">
+                                    <i class="fas fa-trash-alt me-2"></i>Limpiar
+                                </button>
+                                <div class="alert alert-info mt-3" role="alert">
+                                    <i class="fas fa-bolt me-2"></i><strong>Tip:</strong> Usa el botón <strong>x2</strong> en la terminal para acelerar los cálculos.
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="results-section" style="display: none;">
+            <div class="col-lg-12">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h3>Resultados del Análisis</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Terminal para mostrar cálculos en tiempo real -->
+                        <div class="terminal mb-4" id="calculation-terminal">
+                            <div class="terminal-header">
+                                <span class="terminal-title">Cálculo en vivo</span>
+                                <div class="terminal-controls">
+                                    <button id="speed-toggle-btn" class="btn btn-sm btn-warning" title="Aumentar velocidad x2">
+                                        <i class="fas fa-forward"></i> x2
+                                    </button>
+                                    <span class="terminal-control close"></span>
+                                    <span class="terminal-control minimize"></span>
+                                    <span class="terminal-control maximize"></span>
+                                </div>
+                            </div>
+                            <div class="terminal-body" id="terminal-content">
+                                <div class="line">$ Iniciando cálculo de predicción...</div>
+                            </div>
+                        </div>
+
+                        <!-- Sección para mostrar resultados finales -->
+                        <div id="prediction-results" class="mt-4">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <div class="card bg-gradient-primary text-white">
+                                        <div class="card-body text-center">
+                                            <h3><i class="fas fa-chart-line me-2"></i>Predicción: AMBOS MARCAN</h3>
+                                            <div class="display-2 fw-bold my-3" id="win-probability">--%</div>
+                                            <p class="lead">Probabilidad de que ambos equipos anoten</p>
+                                            <hr class="bg-white">
+                                            <p class="text-white mb-1" id="recommended-model">Modelo recomendado: -</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h4><i class="fas fa-chart-bar me-2"></i>Comparativa de Estadísticas</h4>
+                                            <canvas id="stats-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h4 class="text-center mb-3"><i class="fas fa-calculator me-2"></i>Desglose de Modelos</h4>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <strong>Poisson Bivariado:</strong>
+                                                    <span id="poisson-result" class="badge bg-primary">--%</span>
+                                                </div>
+                                                <div class="progress" style="height: 25px;">
+                                                    <div id="poisson-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <strong>Regresión Logística:</strong>
+                                                    <span id="logistic-result" class="badge bg-success">--%</span>
+                                                </div>
+                                                <div class="progress" style="height: 25px;">
+                                                    <div id="logistic-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="alert alert-info mb-0">
+                                                <strong><i class="fas fa-info-circle me-2"></i>Nota:</strong>
+                                                <span id="model-note">Esperando cálculo...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button class="btn btn-info btn-lg" id="explanation-btn">
+                                    <i class="fas fa-robot me-2"></i>Ver Explicación Detallada
+                                </button>
+                                <button class="btn btn-success btn-lg ms-2" id="simular-btn">
+                                    <i class="fas fa-futbol me-2"></i>Simular Partido
+                                </button>
+                                <button class="btn btn-success btn-lg ms-2" id="simulation-ml">
+                                    <i class="fas fa-futbol me-2"></i>Machine learning tactics🔥(En pruebas)
+                                </button>
+                                
+                            </div>
+                            
+                            <!-- Contenedor para resultados de Machine Learning -->
+                            <div id="ml-result" class="mt-4"></div>
+                            
+                            <!-- Modal para la explicación de IA -->
+                            <div class="modal fade" id="explanation-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
+            <!-- Se añade modal-dialog-scrollable -->
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title">Análisis de IA</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="text-center mb-3">
+                                                <div class="spinner-border text-primary" id="ai-loading" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </div>
+                                            <div id="ai-explanation"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 mt-5 bg-dark">
+        <p>Integrantes Marco Martínez - Cristian Jimenez - Cristian Bayona - Carlos Mayorga</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/static/js/script.js"></script>
+
+    <!-- Simulador de partido estilo OneFootball -->
+    <div id="sim-partido-container" style="display:none; margin-top:32px;">
+        <div class="sim-container">
+            <div class="sim-stats sim-stats-left" id="sim-stats-local">
+                <!-- Estadísticas equipo local (rellenadas por JS) -->
+            </div>
+            <div class="sim-main">
+                <div class="sim-header" id="sim-header">
+                    <!-- Cabecera del marcador (rellenada por JS) -->
+                </div>
+                <div class="sim-timeline" id="sim-timeline">
+                    <!-- Eventos del partido (rellenados por JS) -->
+                </div>
+            </div>
+            <div class="sim-stats sim-stats-right" id="sim-stats-visitante">
+                <!-- Estadísticas equipo visitante (rellenadas por JS) -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,555 @@
+/* ============================================
+   GOAL2GOAL - Estilos Personalizados
+   Paleta de colores basada en el logo
+   ============================================ */
+
+:root {
+    /* Colores principales del logo */
+    --primary-navy: #1e3a5f;
+    --primary-cyan: #00a0e3;
+    --primary-orange: #ff6b35;
+
+    /* Tema Oscuro */
+    --bg-darkest: #0a0f1a;
+    --bg-dark: #0d1b2a;
+    --bg-card: #1a2838;
+    --bg-card-hover: #1e2f42;
+
+    --text-light: #ffffff;
+    --text-muted: #c5d0e0;
+    --text-cyan: #5bc0eb;
+    --text-orange: #ff8c42;
+
+    /* Gradientes oscuros */
+    --gradient-primary: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+    --gradient-cyan: linear-gradient(135deg, var(--primary-cyan), #0080b8);
+    --gradient-orange: linear-gradient(135deg, var(--primary-orange), #ff5722);
+}
+
+/* ============================================
+   ESTILOS GENERALES
+   ============================================ */
+
+body {
+    font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-darkest);
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(0, 160, 227, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.06) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text-light);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    padding: 20px;
+}
+
+/* ============================================
+   HEADER Y LOGO
+   ============================================ */
+
+header {
+    margin: 2rem 0;
+    padding: 1.5rem 0;
+    border-bottom: 3px solid var(--primary-cyan);
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-logo {
+    max-width: 280px;
+    height: auto;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease;
+}
+
+.main-logo:hover {
+    transform: scale(1.05);
+}
+
+header .lead {
+    font-size: 1.1rem;
+    color: #ffffff;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   CARDS Y CONTENEDORES
+   ============================================ */
+
+.card {
+    border: 1px solid rgba(0, 160, 227, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.card-header {
+    background: var(--gradient-primary);
+    color: var(--text-light);
+    font-weight: 700;
+    padding: 1.2rem 1.5rem;
+    border: none;
+    border-bottom: 2px solid var(--primary-cyan);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.card-body {
+    padding: 2rem;
+    background: var(--bg-card);
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+.team-container {
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.3) 0%, rgba(13, 27, 42, 0.5) 100%);
+    border: 2px solid var(--primary-cyan) !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 160, 227, 0.15);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.team-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 160, 227, 0.3);
+    border-color: var(--text-cyan);
+}
+
+.team-container h4 {
+    color: #ffffff;
+    font-weight: 700;
+    border-bottom: 3px solid var(--primary-cyan);
+    padding-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 160, 227, 0.5);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.form-control {
+    background: rgba(13, 27, 42, 0.8);
+    border: 2px solid rgba(0, 160, 227, 0.4);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    color: #ffffff;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(13, 27, 42, 0.95);
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 160, 227, 0.3);
+    color: #ffffff;
+}
+
+.form-control::placeholder {
+    color: #8b97a8;
+    font-weight: 400;
+}
+
+.stats-input.is-invalid {
+    border-color: var(--primary-orange);
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+
+.btn {
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--gradient-cyan);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 160, 227, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 160, 227, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #4a5568, #2d3748);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #5a6778, #3d4758);
+}
+
+.btn-danger {
+    background: var(--gradient-orange);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: var(--text-dark);
+}
+
+#speed-toggle-btn.active {
+    background: var(--gradient-accent);
+    color: white;
+    animation: pulse-btn 1.5s infinite;
+}
+
+@keyframes pulse-btn {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 53, 0);
+    }
+}
+
+/* ============================================
+   TERMINAL DE CÁLCULOS
+   ============================================ */
+
+.terminal {
+    background: #1e3a5f;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(30, 58, 95, 0.3);
+    font-family: 'Courier New', monospace;
+}
+
+.terminal-header {
+    background: linear-gradient(135deg, #0d1b2a, #1e3a5f);
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary-cyan);
+}
+
+.terminal-title {
+    color: var(--primary-cyan);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.terminal-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.terminal-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.terminal-control.close { background: #ff6b6b; }
+.terminal-control.minimize { background: #feca57; }
+.terminal-control.maximize { background: #48dbfb; }
+
+.terminal-body {
+    background: #0d1b2a;
+    padding: 1.5rem;
+    color: #00ff00;
+    font-size: 0.9rem;
+    max-height: 500px;
+    overflow-y: auto;
+    line-height: 1.8;
+}
+
+.terminal-body .line {
+    margin-bottom: 0.3rem;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.terminal-body .highlight {
+    color: var(--primary-cyan);
+    font-weight: 700;
+}
+
+.terminal-body .info {
+    color: #48dbfb;
+}
+
+.terminal-body .warning {
+    color: var(--primary-orange);
+}
+
+.terminal-body .result {
+    color: #00ff00;
+    font-weight: 700;
+}
+
+/* ============================================
+   RESULTADOS
+   ============================================ */
+
+#prediction-results {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+}
+
+#prediction-results.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bg-gradient-primary {
+    background: var(--gradient-cyan) !important;
+}
+
+.card.bg-gradient-primary {
+    border: 3px solid var(--primary-cyan);
+    box-shadow: 0 0 30px rgba(0, 160, 227, 0.4);
+}
+
+.display-2 {
+    font-size: 4rem;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Barras de progreso */
+.progress {
+    border-radius: 8px;
+    background: #e1e8ed;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 1s ease;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-bar.bg-primary {
+    background: var(--gradient-primary) !important;
+}
+
+.progress-bar.bg-success {
+    background: var(--gradient-accent) !important;
+}
+
+/* Badges */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.badge.bg-primary {
+    background: var(--primary-cyan) !important;
+    box-shadow: 0 2px 8px rgba(0, 160, 227, 0.3);
+}
+
+.badge.bg-success {
+    background: var(--primary-orange) !important;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+/* Card de estadísticas comparativas */
+.card.bg-light {
+    background: var(--bg-card) !important;
+    border: 1px solid rgba(0, 160, 227, 0.2);
+}
+
+.card.bg-light .card-body {
+    background: var(--bg-card);
+}
+
+.card.bg-light h4 {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 160, 227, 0.3);
+}
+
+.card.bg-light strong {
+    color: #ffffff;
+}
+
+.card.bg-light .alert-info {
+    background: linear-gradient(135deg, rgba(0, 160, 227, 0.2), rgba(0, 160, 227, 0.1));
+}
+
+/* ============================================
+   MÚSICA PHONK
+   ============================================ */
+
+.phonk-controls {
+    background: linear-gradient(135deg, rgba(0, 160, 227, 0.1), rgba(255, 107, 53, 0.1));
+    border-radius: 12px;
+    padding: 1rem;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.phonk-controls.playing {
+    border-color: var(--primary-orange);
+    background: linear-gradient(135deg, rgba(0, 160, 227, 0.2), rgba(255, 107, 53, 0.2));
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+    animation: pulse-phonk 2s infinite;
+}
+
+@keyframes pulse-phonk {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(255, 107, 53, 0);
+    }
+}
+
+.form-range {
+    accent-color: var(--primary-cyan);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+footer {
+    background: var(--primary-navy);
+    color: var(--text-light);
+    padding: 2rem 0;
+    margin-top: 4rem;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   ALERTAS
+   ============================================ */
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(0, 160, 227, 0.2), rgba(0, 160, 227, 0.1));
+    color: #ffffff;
+    border-left: 4px solid var(--primary-cyan);
+    border: 1px solid rgba(0, 160, 227, 0.4);
+}
+
+.alert-info strong {
+    color: var(--text-cyan);
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.modal-content {
+    border-radius: 12px;
+    border: none;
+}
+
+.modal-header {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .main-logo {
+        max-width: 200px;
+    }
+
+    .display-2 {
+        font-size: 2.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADO
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-darkest);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-navy);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-cyan);
+}
