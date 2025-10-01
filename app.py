@@ -44,7 +44,8 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
-login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
+login_manager.login_message = 'Por favor inicia sesión para acceder a Goal2Goal.'
+login_manager.login_message_category = 'info'
 
 # API Key de OpenRouter
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -64,6 +65,7 @@ def load_user(user_id):
 
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 

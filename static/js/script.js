@@ -459,13 +459,25 @@ async function calculatePrediction() {
         const poissonBar = document.getElementById('poisson-bar');
         const logisticBar = document.getElementById('logistic-bar');
 
+        console.log('📊 Actualizando barras:', {
+            poisson: bttsPoisson,
+            logistic: bttsLogistic
+        });
+
         if (poissonBar) {
             poissonBar.style.width = `${bttsPoisson}%`;
             poissonBar.textContent = `${bttsPoisson.toFixed(2)}%`;
+            console.log('✅ Barra Poisson actualizada a:', bttsPoisson + '%');
+        } else {
+            console.error('❌ No se encontró elemento poisson-bar');
         }
+
         if (logisticBar) {
             logisticBar.style.width = `${bttsLogistic}%`;
             logisticBar.textContent = `${bttsLogistic.toFixed(2)}%`;
+            console.log('✅ Barra Logistic actualizada a:', bttsLogistic + '%');
+        } else {
+            console.error('❌ No se encontró elemento logistic-bar');
         }
     }, 300);
 
@@ -1150,58 +1162,114 @@ function getPercentage(val1, val2) {
     return Math.min(Math.max(percentage, 20), 80);
 }
 
-// Función para simular goles usando Poisson
+// Función para simular goles usando Poisson (más realista)
 function simularGoles(lambda) {
+    // Ajustar lambda para que sea más realista (limitar valores extremos)
+    lambda = Math.max(0.3, Math.min(lambda, 3.5)); // Limitar entre 0.3 y 3.5 goles
+
     let L = Math.exp(-lambda);
     let p = 1.0;
     let k = 0;
-    
+
     do {
         k++;
         p *= Math.random();
     } while (p > L);
-    
-    return k - 1;
+
+    // Limitar máximo de goles a 7 para ser realista
+    return Math.min(k - 1, 7);
 }
 
-// Función para generar estadísticas aleatorias del partido
+// Función para generar estadísticas realistas del partido
 function generarEstadisticasPartido(stats1, stats2) {
-    // Convertir posesión a números que sumen 100
-    const posesionTotal = 100;
-    const posesionLocal = Math.round(stats1.possession);
-    const posesionVisitante = posesionTotal - posesionLocal;
-    
-    // Generar estadísticas basadas en las medias de los equipos
+    // Posesión realista: añadir variación pero que sume 100%
+    const posesionBase1 = parseFloat(stats1.possession) || 50;
+    const posesionBase2 = parseFloat(stats2.possession) || 50;
+    const totalPosesion = posesionBase1 + posesionBase2;
+
+    // Normalizar posesión para que sume 100 con variación aleatoria ±5%
+    const variacion = (Math.random() - 0.5) * 10; // -5% a +5%
+    let posesionLocal = Math.round((posesionBase1 / totalPosesion) * 100 + variacion);
+    posesionLocal = Math.max(30, Math.min(70, posesionLocal)); // Entre 30% y 70%
+    const posesionVisitante = 100 - posesionLocal;
+
+    // Tiros a puerta realistas (correlacionados con posesión y calidad)
+    const factorLocal = (posesionLocal / 50) * ((stats1.goalsScored || 1) / 1.5);
+    const factorVisitante = (posesionVisitante / 50) * ((stats2.goalsScored || 1) / 1.5);
+
+    const tirosLocal = Math.round(3 + factorLocal * 2 + Math.random() * 3);
+    const tirosVisitante = Math.round(3 + factorVisitante * 2 + Math.random() * 3);
+
+    // Tiros totales (incluyendo fuera del marco): 2-3 veces los tiros a puerta
+    const tirosTotalesLocal = Math.round(tirosLocal * (2 + Math.random()));
+    const tirosTotalesVisitante = Math.round(tirosVisitante * (2 + Math.random()));
+
+    // Precisión de pases con variación ±3%
+    const pasesLocal = Math.round(stats1.passingAccuracy + (Math.random() - 0.5) * 6);
+    const pasesVisitante = Math.round(stats2.passingAccuracy + (Math.random() - 0.5) * 6);
+
+    // Faltas realistas (10-20 por equipo)
+    const faltasBase1 = parseFloat(stats1.fouls) || 12;
+    const faltasBase2 = parseFloat(stats2.fouls) || 12;
+    const faltasLocal = Math.round(faltasBase1 * (0.7 + Math.random() * 0.6));
+    const faltasVisitante = Math.round(faltasBase2 * (0.7 + Math.random() * 0.6));
+
+    // Córners realistas (correlacionados con posesión, 0-10 por equipo)
+    const cornersBase1 = parseFloat(stats1.corners) || 5;
+    const cornersBase2 = parseFloat(stats2.corners) || 5;
+    const cornersLocal = Math.round(cornersBase1 * (0.6 + Math.random() * 0.8));
+    const cornersVisitante = Math.round(cornersBase2 * (0.6 + Math.random() * 0.8));
+
+    // Tarjetas amarillas realistas (0-4 por equipo)
+    const tarjetasBase1 = parseFloat(stats1.yellowCards) || 2;
+    const tarjetasBase2 = parseFloat(stats2.yellowCards) || 2;
+    const tarjetasLocal = Math.round(tarjetasBase1 * (0.5 + Math.random() * 1));
+    const tarjetasVisitante = Math.round(tarjetasBase2 * (0.5 + Math.random() * 1));
+
+    // Tarjetas rojas (muy ocasionales, máximo 1 por equipo)
+    const rojaLocal = Math.random() < 0.08 ? 1 : 0; // 8% probabilidad
+    const rojaVisitante = Math.random() < 0.08 ? 1 : 0;
+
     return {
         posesion: {
             nombre: "Posesión",
             local: posesionLocal + "%",
             visitante: posesionVisitante + "%"
         },
-        tiros: {
+        tirosAPuerta: {
             nombre: "Tiros a puerta",
-            local: Math.round(stats1.shotsOnTarget * (Math.random() * 0.4 + 0.8)),
-            visitante: Math.round(stats2.shotsOnTarget * (Math.random() * 0.4 + 0.8))
+            local: tirosLocal,
+            visitante: tirosVisitante
+        },
+        tirosTotales: {
+            nombre: "Tiros totales",
+            local: tirosTotalesLocal,
+            visitante: tirosTotalesVisitante
         },
         pases: {
             nombre: "Precisión de pases",
-            local: Math.round(stats1.passingAccuracy) + "%",
-            visitante: Math.round(stats2.passingAccuracy) + "%"
+            local: Math.max(60, Math.min(95, pasesLocal)) + "%",
+            visitante: Math.max(60, Math.min(95, pasesVisitante)) + "%"
         },
         faltas: {
             nombre: "Faltas",
-            local: Math.round(stats1.fouls * (Math.random() * 0.4 + 0.8)),
-            visitante: Math.round(stats2.fouls * (Math.random() * 0.4 + 0.8))
+            local: Math.max(5, Math.min(20, faltasLocal)),
+            visitante: Math.max(5, Math.min(20, faltasVisitante))
         },
         corners: {
             nombre: "Córners",
-            local: Math.round(stats1.corners * (Math.random() * 0.4 + 0.8)),
-            visitante: Math.round(stats2.corners * (Math.random() * 0.4 + 0.8))
+            local: Math.max(0, Math.min(12, cornersLocal)),
+            visitante: Math.max(0, Math.min(12, cornersVisitante))
         },
-        tarjetas: {
+        tarjetasAmarillas: {
             nombre: "Tarjetas amarillas",
-            local: Math.round(stats1.yellowCards * (Math.random() * 0.6 + 0.7)),
-            visitante: Math.round(stats2.yellowCards * (Math.random() * 0.6 + 0.7))
+            local: Math.max(0, Math.min(5, tarjetasLocal)),
+            visitante: Math.max(0, Math.min(5, tarjetasVisitante))
+        },
+        tarjetasRojas: {
+            nombre: "Tarjetas rojas",
+            local: rojaLocal,
+            visitante: rojaVisitante
         }
     };
 }
@@ -1274,17 +1342,39 @@ function generarMomentosPartido(equipo1, equipo2, goles1, goles2) {
     return momentos;
 }
 
-// Función para generar minutos aleatorios para los goles
+// Función para generar minutos realistas para los goles
 function generarMinutosAleatorios(cantidad) {
     const minutos = [];
     for (let i = 0; i < cantidad; i++) {
-        // Más probabilidad de goles en la segunda parte
+        // Distribución realista de goles por periodo:
+        // 1-15 min: 15% | 16-30: 20% | 31-45: 25% (45+ incluido)
+        // 46-60: 20% | 61-75: 25% | 76-90: 30% (90+ incluido)
+
+        const rand = Math.random();
         let minuto;
-        if (Math.random() < 0.6) {
-            minuto = Math.floor(Math.random() * 45) + 46; // 46-90
-        } else {
-            minuto = Math.floor(Math.random() * 45) + 1; // 1-45
+
+        if (rand < 0.45) { // 45% primera parte
+            const randPrimera = Math.random();
+            if (randPrimera < 0.15) {
+                minuto = Math.floor(Math.random() * 15) + 1; // 1-15
+            } else if (randPrimera < 0.35) {
+                minuto = Math.floor(Math.random() * 15) + 16; // 16-30
+            } else {
+                minuto = Math.floor(Math.random() * 15) + 31; // 31-45
+                if (Math.random() < 0.1) minuto = 45 + Math.floor(Math.random() * 3) + 1; // 45+1 a 45+3
+            }
+        } else { // 55% segunda parte
+            const randSegunda = Math.random();
+            if (randSegunda < 0.20) {
+                minuto = Math.floor(Math.random() * 15) + 46; // 46-60
+            } else if (randSegunda < 0.45) {
+                minuto = Math.floor(Math.random() * 15) + 61; // 61-75
+            } else {
+                minuto = Math.floor(Math.random() * 15) + 76; // 76-90
+                if (Math.random() < 0.15) minuto = 90 + Math.floor(Math.random() * 5) + 1; // 90+1 a 90+5
+            }
         }
+
         minutos.push(minuto);
     }
     return minutos;
@@ -1293,35 +1383,53 @@ function generarMinutosAleatorios(cantidad) {
 // Funciones para generar descripciones aleatorias
 function generarDescripcionGol() {
     const descripciones = [
-        `Remate potente desde fuera del área`,
-        `Cabezazo tras un centro preciso`,
-        `Disparo cruzado que entra por la escuadra`,
-        `Penalti bien ejecutado`,
-        `Contraataque letal`,
-        `Tras una gran jugada colectiva`,
-        `Aprovechando un error defensivo`,
-        `De tiro libre directo`
+        `¡GOL! Remate potente desde fuera del área que bate al portero`,
+        `¡GOL! Cabezazo imparable tras un centro preciso desde la banda`,
+        `¡GOL! Disparo cruzado que se cuela por la escuadra`,
+        `¡GOL! Penalti convertido con categoría`,
+        `¡GOL! Contraataque fulminante que termina en gol`,
+        `¡GOL! Gran jugada colectiva que termina en la red`,
+        `¡GOL! Aprovecha el error defensivo y no perdona`,
+        `¡GOL! Tiro libre directo que se mete junto al poste`,
+        `¡GOL! Remate de primera que supera al guardameta`,
+        `¡GOL! Definición perfecta mano a mano con el portero`,
+        `¡GOL! Vaselina magistral sobre el portero adelantado`,
+        `¡GOL! Rechace en el área que remata a la red`,
+        `¡GOL! De volea desde el borde del área`,
+        `¡GOL! Cabalgada individual que termina en gol`,
+        `¡GOL! Finaliza una jugada de estrategia perfecta`
     ];
     return descripciones[Math.floor(Math.random() * descripciones.length)];
 }
 
 function generarDescripcionTiro() {
     const descripciones = [
-        `Disparo que se va por encima del larguero`,
-        `Tiro que detiene el portero`,
-        `Remate que se estrella en el poste`,
-        `Intento desde lejos que sale desviado`,
-        `Buena parada del portero tras un disparo peligroso`
+        `Disparo potente que se va por encima del travesaño`,
+        `Gran intervención del portero para detener el balón`,
+        `¡Al palo! El balón se estrella en el poste`,
+        `Remate desde la frontal que se va desviado`,
+        `El portero vuela para desviar el disparo a córner`,
+        `Tiro cruzado que pasa rozando el palo`,
+        `Ocasión clara que despeja la defensa in extremis`,
+        `Remate de cabeza que se va fuera por poco`,
+        `Disparo a bocajarro que detiene milagrosamente el portero`,
+        `Tiro desde fuera del área que sale alto`,
+        `Centro peligroso que nadie logra rematar`,
+        `Mano a mano que salva espectacularmente el guardameta`
     ];
     return descripciones[Math.floor(Math.random() * descripciones.length)];
 }
 
 function generarDescripcionFalta() {
     const descripciones = [
-        `Falta peligrosa cerca del área`,
-        `Entrada dura que el árbitro sanciona`,
-        `Infracción por mano`,
-        `Falta táctica para cortar un avance`
+        `Falta peligrosa en la frontal del área`,
+        `Entrada fuerte que el árbitro no perdona`,
+        `Mano que sanciona el colegiado`,
+        `Falta táctica para cortar el contraataque`,
+        `Toque mínimo que el árbitro interpreta como falta`,
+        `Juego brusco sancionado con falta`,
+        `Pisotón involuntario que es señalado`,
+        `Carga ilegal en disputa aérea`
     ];
     return descripciones[Math.floor(Math.random() * descripciones.length)];
 }
