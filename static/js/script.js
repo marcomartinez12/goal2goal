@@ -489,6 +489,12 @@ async function calculatePrediction() {
     await new Promise(resolve => setTimeout(resolve, 500));
     predictionResults.classList.add('show');
 
+    // Mostrar botón de guardar si existe
+    const saveBtn = document.getElementById('save-prediction-btn');
+    if (saveBtn) {
+        saveBtn.style.display = 'inline-block';
+    }
+
     // Mensaje final
     if (isSpeedMode) {
         await typeTerminalText(terminal, `$ <span class="highlight">✅ Cálculo completado en modo x2!</span>`);

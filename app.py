@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 import requests
 import os
@@ -11,6 +13,8 @@ import numpy as np
 import time
 import logging
 import json
+from models import db, User, Prediction
+from decimal import Decimal
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO,
@@ -20,6 +24,27 @@ logging.basicConfig(level=logging.INFO,
 load_dotenv()
 
 app = Flask(__name__)
+
+# Configuración de la aplicación
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key_change_in_production')
+
+# Configuración de MySQL
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:"
+    f"{os.getenv('MYSQL_PASSWORD', '')}@"
+    f"{os.getenv('MYSQL_HOST', 'localhost')}:"
+    f"{os.getenv('MYSQL_PORT', '3306')}/"
+    f"{os.getenv('MYSQL_DATABASE', 'goal2goal_db')}"
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = False
+
+# Inicializar extensiones
+db.init_app(app)
+bcrypt = Bcrypt(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
 
 # API Key de OpenRouter
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -32,10 +57,126 @@ if not OPENROUTER_API_KEY:
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# User loader para Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Registro de nuevos usuarios"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        data = request.json if request.is_json else request.form
+
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+
+        # Validaciones básicas
+        if not username or not email or not password:
+            return jsonify({'error': 'Todos los campos son requeridos'}), 400
+
+        if len(password) < 6:
+            return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+
+        # Verificar si el usuario ya existe
+        if User.query.filter_by(username=username).first():
+            return jsonify({'error': 'El nombre de usuario ya está en uso'}), 400
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({'error': 'El email ya está registrado'}), 400
+
+        # Crear nuevo usuario
+        try:
+            password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(
+                username=username,
+                email=email,
+                password_hash=password_hash
+            )
+            db.session.add(new_user)
+            db.session.commit()
+
+            app.logger.info(f"Nuevo usuario registrado: {username}")
+            return jsonify({'success': True, 'message': 'Usuario registrado exitosamente'}), 201
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error al registrar usuario: {e}")
+            return jsonify({'error': 'Error al registrar el usuario'}), 500
+
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Inicio de sesión"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        data = request.json if request.is_json else request.form
+
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+
+        if not username or not password:
+            return jsonify({'error': 'Usuario y contraseña son requeridos'}), 400
+
+        # Buscar usuario
+        user = User.query.filter_by(username=username).first()
+
+        if user and bcrypt.check_password_hash(user.password_hash, password):
+            if not user.is_active:
+                return jsonify({'error': 'Usuario desactivado'}), 403
+
+            login_user(user)
+            user.last_login = db.func.now()
+            db.session.commit()
+
+            app.logger.info(f"Usuario {username} inició sesión")
+            return jsonify({
+                'success': True,
+                'message': 'Sesión iniciada correctamente',
+                'username': user.username
+            }), 200
+
+        return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Cerrar sesión"""
+    username = current_user.username
+    logout_user()
+    app.logger.info(f"Usuario {username} cerró sesión")
+    return redirect(url_for('login'))
+
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard del usuario con historial de predicciones"""
+    predictions = Prediction.query.filter_by(user_id=current_user.id)\
+        .order_by(Prediction.created_at.desc())\
+        .limit(20)\
+        .all()
+
+    return render_template('dashboard.html',
+                         username=current_user.username,
+                         predictions=predictions)
 
 
 @app.route('/get_explanation', methods=['POST'])
@@ -258,71 +399,90 @@ def generate_chart():
 
 
 @app.route('/save_prediction', methods=['POST'])
+@login_required
 def save_prediction():
     """
-    Guarda los resultados de la predicción para futuras referencias
+    Guarda los resultados de la predicción en la base de datos
     """
     try:
         data = request.json
         if not data:
             return jsonify({"error": "No se proporcionaron datos"}), 400
-            
-        # Crear directorio si no existe
-        predictions_dir = os.path.join(os.path.dirname(__file__), 'predictions')
-        os.makedirs(predictions_dir, exist_ok=True)
-        
-        # Generar nombre de archivo con timestamp
-        timestamp = int(time.time())
-        filename = f"prediction_{timestamp}.json"
-        filepath = os.path.join(predictions_dir, filename)
-        
-        # Guardar predicción
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            
+
+        team1 = data.get('team1', {})
+        team2 = data.get('team2', {})
+        btts = data.get('btts', {})
+
+        # Crear nueva predicción
+        new_prediction = Prediction(
+            user_id=current_user.id,
+            team1_name=team1.get('name', 'Equipo 1'),
+            team2_name=team2.get('name', 'Equipo 2'),
+            # Estadísticas Equipo 1
+            team1_goals_scored=Decimal(str(team1.get('stats', {}).get('goalsScored', 0))),
+            team1_goals_conceded=Decimal(str(team1.get('stats', {}).get('goalsConceded', 0))),
+            team1_possession=Decimal(str(team1.get('stats', {}).get('possession', 0))),
+            team1_shots_on_target=Decimal(str(team1.get('stats', {}).get('shotsOnTarget', 0))),
+            team1_passing_accuracy=Decimal(str(team1.get('stats', {}).get('passingAccuracy', 0))),
+            # Estadísticas Equipo 2
+            team2_goals_scored=Decimal(str(team2.get('stats', {}).get('goalsScored', 0))),
+            team2_goals_conceded=Decimal(str(team2.get('stats', {}).get('goalsConceded', 0))),
+            team2_possession=Decimal(str(team2.get('stats', {}).get('possession', 0))),
+            team2_shots_on_target=Decimal(str(team2.get('stats', {}).get('shotsOnTarget', 0))),
+            team2_passing_accuracy=Decimal(str(team2.get('stats', {}).get('passingAccuracy', 0))),
+            # Resultados
+            poisson_btts=Decimal(str(btts.get('poisson', 0))),
+            logistic_btts=Decimal(str(btts.get('logistic', 0))),
+            final_btts=Decimal(str(btts.get('final', 0))),
+            recommended_model=btts.get('recommendedModel', 'Poisson Bivariado'),
+            confidence_level=btts.get('confidence', 'Media')
+        )
+
+        db.session.add(new_prediction)
+        db.session.commit()
+
+        app.logger.info(f"Predicción guardada para usuario {current_user.username}: {team1.get('name')} vs {team2.get('name')}")
+
         return jsonify({
-            "success": True, 
+            "success": True,
             "message": "Predicción guardada correctamente",
-            "filename": filename
+            "prediction_id": new_prediction.id
         })
-        
+
     except Exception as e:
+        db.session.rollback()
         app.logger.error(f"Error al guardar predicción: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
 @app.route('/get_historical', methods=['GET'])
+@login_required
 def get_historical():
     """
-    Obtiene las predicciones históricas guardadas
+    Obtiene las predicciones históricas del usuario desde la base de datos
     """
     try:
-        predictions_dir = os.path.join(os.path.dirname(__file__), 'predictions')
-        if not os.path.exists(predictions_dir):
-            return jsonify({"predictions": []})
-            
-        files = os.listdir(predictions_dir)
-        predictions = []
-        
-        for file in sorted(files, reverse=True)[:10]:  # Mostrar solo las 10 más recientes
-            if file.endswith('.json'):
-                try:
-                    with open(os.path.join(predictions_dir, file), 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        # Extraer información relevante
-                        predictions.append({
-                            "id": file.replace("prediction_", "").replace(".json", ""),
-                            "team1": data.get("team1", {}).get("name", "Equipo 1"),
-                            "team2": data.get("team2", {}).get("name", "Equipo 2"),
-                            "favoriteTeam": data.get("favoriteTeam", "Desconocido"),
-                            "winProbability": data.get("winProbability", "N/A"),
-                            "timestamp": int(file.replace("prediction_", "").replace(".json", ""))
-                        })
-                except Exception as e:
-                    app.logger.error(f"Error al procesar archivo {file}: {e}")
-                    
-        return jsonify({"predictions": predictions})
-        
+        predictions = Prediction.query.filter_by(user_id=current_user.id)\
+            .order_by(Prediction.created_at.desc())\
+            .limit(10)\
+            .all()
+
+        predictions_list = []
+        for pred in predictions:
+            predictions_list.append({
+                "id": pred.id,
+                "team1": pred.team1_name,
+                "team2": pred.team2_name,
+                "poisson_btts": float(pred.poisson_btts) if pred.poisson_btts else 0,
+                "logistic_btts": float(pred.logistic_btts) if pred.logistic_btts else 0,
+                "final_btts": float(pred.final_btts) if pred.final_btts else 0,
+                "recommended_model": pred.recommended_model,
+                "confidence_level": pred.confidence_level,
+                "created_at": pred.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({"predictions": predictions_list})
+
     except Exception as e:
         app.logger.error(f"Error al obtener predicciones históricas: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -339,6 +499,14 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
+    # Crear tablas en la base de datos si no existen
+    with app.app_context():
+        try:
+            db.create_all()
+            app.logger.info("Tablas de base de datos verificadas/creadas")
+        except Exception as e:
+            app.logger.error(f"Error al crear tablas: {e}")
+
     port = int(os.environ.get("PORT", 5000))
     app.logger.info(f"Iniciando servidor en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=True)

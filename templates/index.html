@@ -12,8 +12,20 @@
 <body>
     <div class="container">
         <header class="text-center my-4">
-            <div class="logo-container mb-3">
-                <img src="/static/images/goal2goal.jpeg" alt="Goal2Goal Logo" class="main-logo">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div style="flex: 1;"></div>
+                <div class="logo-container">
+                    <img src="/static/images/goal2goal.jpeg" alt="Goal2Goal Logo" class="main-logo">
+                </div>
+                <div style="flex: 1; text-align: right;">
+                    {% if current_user.is_authenticated %}
+                        <a href="/dashboard" class="btn btn-sm btn-outline-light me-2">📊 Mi Dashboard</a>
+                        <a href="/logout" class="btn btn-sm btn-outline-danger">Cerrar Sesión</a>
+                    {% else %}
+                        <a href="/login" class="btn btn-sm btn-outline-light me-2">Iniciar Sesión</a>
+                        <a href="/register" class="btn btn-sm btn-outline-primary">Registrarse</a>
+                    {% endif %}
+                </div>
             </div>
             <p class="lead">Predicción BTTS (Both Teams To Score) con Poisson Bivariado y Regresión Logística</p>
         </header>
@@ -174,6 +186,11 @@
                                             <p class="lead">Probabilidad de que ambos equipos anoten</p>
                                             <hr class="bg-white">
                                             <p class="text-white mb-1" id="recommended-model">Modelo recomendado: -</p>
+                                            {% if current_user.is_authenticated %}
+                                            <button id="save-prediction-btn" class="btn btn-light mt-3" style="display: none;">
+                                                <i class="fas fa-save me-2"></i>Guardar Predicción
+                                            </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -273,6 +290,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="/static/js/script.js"></script>
+    <script src="/static/js/save-prediction.js"></script>
 
     <!-- Simulador de partido estilo OneFootball -->
     <div id="sim-partido-container" style="display:none; margin-top:32px;">
