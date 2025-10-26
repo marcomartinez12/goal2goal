@@ -141,7 +141,7 @@ def login():
             if not user.is_active:
                 return jsonify({'error': 'Usuario desactivado'}), 403
 
-            login_user(user)
+            login_user(user, remember=False)  # remember=False hace que la sesión expire al cerrar el navegador
             user.last_login = db.func.now()
             db.session.commit()
 
@@ -488,6 +488,40 @@ def get_historical():
     except Exception as e:
         app.logger.error(f"Error al obtener predicciones históricas: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/como-funciona', methods=['POST'])
+def como_funciona():
+    """
+    Muestra paso a paso cómo se calculó la predicción con los datos ingresados
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos"}), 400
+
+        # Guardar datos en sesión para mostrarlos en la página
+        session['calculation_data'] = data
+
+        return jsonify({"success": True, "redirect": "/proceso-calculo"})
+
+    except Exception as e:
+        app.logger.error(f"Error al procesar datos: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/proceso-calculo')
+def proceso_calculo():
+    """
+    Página que muestra el proceso de cálculo paso a paso
+    """
+    calculation_data = session.get('calculation_data')
+
+    if not calculation_data:
+        flash('No hay datos de cálculo disponibles', 'warning')
+        return redirect(url_for('index'))
+
+    return render_template('proceso_calculo.html', data=calculation_data)
 
 
 @app.errorhandler(404)

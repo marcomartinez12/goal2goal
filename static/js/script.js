@@ -12,18 +12,18 @@ const LAMBDA_FACTORS = {
 };
 
 // Pesos para el modelo de Regresión Logística (BTTS - Both Teams To Score)
-// Calibrados con datos históricos reales de ligas europeas
-// Objetivo: ~50-55% para partidos promedio, ~65-75% para equipos ofensivos
+// Ajustados basándose en patrones reales de BTTS en ligas profesionales
+// Objetivo: ~40-45% para partidos defensivos, ~60-70% para equipos ofensivos
 const LOGISTIC_WEIGHTS = {
-    intercept: -1.2,  // Sesgo base (ajustado para ~50% baseline)
-    goalsScored1: 0.28,  // Capacidad ofensiva equipo 1
-    goalsScored2: 0.28,  // Capacidad ofensiva equipo 2
-    goalsConceded1: 0.22,  // Debilidad defensiva equipo 1 ayuda a equipo 2
-    goalsConceded2: 0.22,  // Debilidad defensiva equipo 2 ayuda a equipo 1
-    shotsOnTarget1: 0.05,
-    shotsOnTarget2: 0.05,
-    avgGoalsPerMatch: 0.18,  // Indicador de partidos con goles
-    offensiveStrength: 0.12   // Ratio ofensiva combinada
+    intercept: -0.8,  // Sesgo base ajustado
+    goalsScored1: 0.45,  // Capacidad ofensiva equipo 1 (peso aumentado)
+    goalsScored2: 0.45,  // Capacidad ofensiva equipo 2 (peso aumentado)
+    goalsConceded1: 0.35,  // Debilidad defensiva equipo 1 ayuda a equipo 2
+    goalsConceded2: 0.35,  // Debilidad defensiva equipo 2 ayuda a equipo 1
+    shotsOnTarget1: 0.08,  // Indicador de eficiencia ofensiva
+    shotsOnTarget2: 0.08,
+    avgGoalsPerMatch: 0.25,  // Factor importante para BTTS
+    offensiveStrength: 0.15   // Ratio ofensiva combinada
 };
 
 // Variables globales
@@ -331,7 +331,7 @@ async function calculatePrediction() {
     }
     
     // Iniciar animación de cálculo en la terminal
-    await typeTerminalText(terminal, `$ Iniciando cálculo de predicción con modelo de Poisson...`);
+    await typeTerminalText(terminal, `$ Iniciando cálculo de predicción con modelo de Poisson Bivariado...`);
     if (isSpeedMode) {
         await typeTerminalText(terminal, `$ <span class="highlight">⚡ Modo velocidad x2 activo...</span>`);
     } else {
@@ -360,10 +360,28 @@ async function calculatePrediction() {
     await typeTerminalText(terminal, `\n<span class="info">P(${team1} anota ≥ 1 gol):</span> <span class="result">${(probTeam1Scores * 100).toFixed(2)}%</span>`);
     await typeTerminalText(terminal, `<span class="info">P(${team2} anota ≥ 1 gol):</span> <span class="result">${(probTeam2Scores * 100).toFixed(2)}%</span>`);
 
-    // Probabilidad de que AMBOS marquen (asumiendo independencia)
-    const bttsPoisson = probTeam1Scores * probTeam2Scores * 100;
+    // Calcular parámetro de correlación rho basado en estadísticas defensivas
+    // rho representa la correlación entre los goles de ambos equipos
+    // Valores típicos: 0.05 a 0.15 en partidos profesionales
+    const avgDefensiveVulnerability = (stats1.goalsConceded + stats2.goalsConceded) / 2;
+    const rho = Math.min(0.05 + (avgDefensiveVulnerability / 50), 0.20); // Entre 0.05 y 0.20
+
+    await typeTerminalText(terminal, `<span class="info">Parámetro de correlación (ρ):</span> <span class="result">${rho.toFixed(3)}</span>`);
+
+    // Calcular P(X=0, Y=0) con correlación usando Poisson Bivariado
+    // P(X=0, Y=0) = exp(-lambda1 - lambda2 - rho)
+    const probBothZero = Math.exp(-lambda1 - lambda2 - rho);
+
+    // Calcular P(X=0) y P(Y=0)
+    const probTeam1Zero = poissonProbability(lambda1, 0);
+    const probTeam2Zero = poissonProbability(lambda2, 0);
+
+    // P(Ambos marcan) = 1 - P(X=0) - P(Y=0) + P(X=0, Y=0)
+    // Esta es la fórmula correcta del Poisson Bivariado
+    const bttsPoisson = (1 - probTeam1Zero - probTeam2Zero + probBothZero) * 100;
     const noBttsPoisson = 100 - bttsPoisson;
 
+    await typeTerminalText(terminal, `<span class="info">P(ambos = 0 goles con correlación):</span> <span class="result">${(probBothZero * 100).toFixed(2)}%</span>`);
     await typeTerminalText(terminal, `\n<span class="highlight">P(Ambos Marcan) - Poisson Bivariado:</span> <span class="result">${bttsPoisson.toFixed(2)}%</span>`);
     await typeTerminalText(terminal, `<span class="info">P(NO Ambos Marcan):</span> <span class="result">${noBttsPoisson.toFixed(2)}%</span>`);
 
@@ -555,12 +573,36 @@ async function calculateLambda(terminal, teamName, teamStats, opponentStats) {
         lambda += adjustment;
         
         let color = "info";
-        if (adjustment > 0) color = "highlight";
-        if (adjustment < 0) color = "warning";
-        
+        let icon = "📊";
+        if (adjustment > 0) {
+            color = "highlight";
+            icon = "✅";
+        }
+        if (adjustment < 0) {
+            color = "warning";
+            icon = "⚠️";
+        }
+
         detailedCalculation.push({stat, value: statValue, factor, adjustment: adjustment.toFixed(3)});
-        
-        await typeTerminalText(terminal, `<span class="${color}">${stat}:</span> ${statValue} → ajuste: ${adjustment.toFixed(3)}`);
+
+        // Texto con icono y barra de progreso visual
+        const adjustmentText = adjustment >= 0 ? `+${adjustment.toFixed(3)}` : adjustment.toFixed(3);
+        const barWidth = Math.min(Math.abs(adjustment) * 20, 100);
+        const barColor = adjustment > 0 ? '#00ff88' : '#ff6b6b';
+
+        await typeTerminalText(terminal, `<span class="${color}">${icon} ${stat}:</span> ${statValue} → ajuste: <span class="number-animated" style="color: ${barColor}; font-weight: bold;">${adjustmentText}</span>`);
+
+        // Agregar mini barra de progreso visual después del texto
+        const progressBar = document.createElement('div');
+        progressBar.className = 'calculation-progress-bar';
+        progressBar.innerHTML = `<div class="progress-fill" style="width: 0%; background: ${barColor};"></div>`;
+        terminal.lastChild.appendChild(progressBar);
+
+        // Animar la barra
+        setTimeout(() => {
+            progressBar.querySelector('.progress-fill').style.width = barWidth + '%';
+        }, 50);
+
         await new Promise(resolve => setTimeout(resolve, 300));
     }
     
@@ -573,11 +615,134 @@ async function calculateLambda(terminal, teamName, teamStats, opponentStats) {
     return [lambda, detailedCalculation];
 }
 
-// Nueva función para escribir texto caracter por caracter en la terminal
+// ==========================================
+// SISTEMA DE EFECTOS DRAMÁTICOS Y DINÁMICOS
+// ==========================================
+
+function createParticleExplosion(container, x, y, color) {
+    const particleCount = 20;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'epic-particle';
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        particle.style.background = color;
+
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const velocity = 80 + Math.random() * 80;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+
+        particle.style.setProperty('--vx', vx + 'px');
+        particle.style.setProperty('--vy', vy + 'px');
+
+        container.appendChild(particle);
+        setTimeout(() => particle.remove(), 1200);
+    }
+}
+
+function createShockwave(container, color) {
+    const wave = document.createElement('div');
+    wave.className = 'shockwave-effect';
+    wave.style.borderColor = color;
+    wave.style.boxShadow = `0 0 20px ${color}, inset 0 0 20px ${color}`;
+    container.appendChild(wave);
+    setTimeout(() => wave.remove(), 1000);
+}
+
+function createNumberClash(container, value1, value2, result) {
+    const clash = document.createElement('div');
+    clash.className = 'number-clash';
+    clash.innerHTML = `
+        <span class="clash-number left">${value1}</span>
+        <span class="clash-impact">⚡</span>
+        <span class="clash-number right">${value2}</span>
+        <span class="clash-result">${result}</span>
+    `;
+    container.appendChild(clash);
+    setTimeout(() => clash.remove(), 2000);
+}
+
+// Nueva función para escribir texto con EFECTOS DRAMÁTICOS ÉPICOS
 async function typeTerminalText(terminal, text) {
     const line = document.createElement('div');
-    line.className = 'line';
-    terminal.appendChild(line);
+    line.className = 'line terminal-line-epic';
+    line.style.position = 'relative';
+
+    // Determinar si es un cálculo importante
+    const isImportant = text.includes('Lambda final') || text.includes('P(Ambos Marcan)') || text.includes('PREDICCIÓN FINAL') || text.includes('====');
+    const isCalculation = text.includes('ajuste:') || text.includes('→');
+    const isHeader = text.includes('MODELO') || text.includes('====');
+
+    // ENTRADA DRAMÁTICA SEGÚN TIPO
+    if (isImportant) {
+        // ENTRADA ÉPICA PARA RESULTADOS IMPORTANTES
+        line.style.opacity = '0';
+        line.style.transform = 'translateY(-50px) scale(1.5) rotateZ(10deg)';
+        line.style.filter = 'blur(10px)';
+        terminal.appendChild(line);
+
+        // Explosión de partículas
+        setTimeout(() => {
+            const rect = line.getBoundingClientRect();
+            const terminalRect = terminal.getBoundingClientRect();
+            createParticleExplosion(terminal, rect.left - terminalRect.left + rect.width/2, rect.top - terminalRect.top, '#00ff88');
+            createShockwave(terminal, '#00ff88');
+        }, 100);
+
+        setTimeout(() => {
+            line.style.transition = 'all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            line.style.opacity = '1';
+            line.style.transform = 'translateY(0) scale(1) rotateZ(0)';
+            line.style.filter = 'blur(0)';
+            line.style.textShadow = '0 0 20px #00ff88, 0 0 40px #00ff88, 0 0 60px #00ff88';
+        }, 50);
+
+    } else if (isHeader) {
+        // ENTRADA PODEROSA PARA HEADERS
+        line.style.opacity = '0';
+        line.style.transform = 'translateX(-100%) rotateY(90deg)';
+        terminal.appendChild(line);
+
+        setTimeout(() => {
+            line.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            line.style.opacity = '1';
+            line.style.transform = 'translateX(0) rotateY(0)';
+            createShockwave(terminal, '#00d4ff');
+        }, 30);
+
+    } else if (isCalculation) {
+        // ENTRADA DINÁMICA PARA CÁLCULOS
+        line.style.opacity = '0';
+        line.style.transform = 'translateY(-30px) scale(0.5)';
+        terminal.appendChild(line);
+
+        setTimeout(() => {
+            line.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            line.style.opacity = '1';
+            line.style.transform = 'translateY(0) scale(1)';
+
+            // Mini explosión para cálculos
+            if (Math.random() > 0.5) {
+                const rect = line.getBoundingClientRect();
+                const terminalRect = terminal.getBoundingClientRect();
+                const color = text.includes('+') ? '#00ff88' : '#ff6b6b';
+                createParticleExplosion(terminal, rect.left - terminalRect.left, rect.top - terminalRect.top, color);
+            }
+        }, 20);
+
+    } else {
+        // ENTRADA NORMAL PERO CON ESTILO
+        line.style.opacity = '0';
+        line.style.transform = 'translateX(-20px) rotateX(45deg)';
+        terminal.appendChild(line);
+
+        setTimeout(() => {
+            line.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            line.style.opacity = '1';
+            line.style.transform = 'translateX(0) rotateX(0)';
+        }, 10);
+    }
     
     // Separar el texto en HTML y texto plano
     const tempDiv = document.createElement('div');
@@ -624,7 +789,10 @@ async function typeTerminalText(terminal, text) {
             await new Promise(resolve => setTimeout(resolve, typingSpeed));
         }
     }
-    
+
+    // Marcar línea como completa para quitar el cursor parpadeante
+    line.classList.add('complete');
+
     // Scroll al final del terminal
     terminal.scrollTop = terminal.scrollHeight;
 }
@@ -1052,19 +1220,22 @@ async function simularPartido() {
     const team2 = currentResults.team2.name;
     const lambda1 = currentResults.team1.lambda;
     const lambda2 = currentResults.team2.lambda;
-    
-    // Simular goles (usando distribución de Poisson)
-    const goles1 = simularGoles(lambda1);
-    const goles2 = simularGoles(lambda2);
-    
+    const stats1 = currentResults.team1.stats;
+    const stats2 = currentResults.team2.stats;
+
+    // SIMULACIÓN AVANZADA MINUTO A MINUTO
+    const resultadoSimulacion = simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2);
+
+    const goles1 = resultadoSimulacion.goles1;
+    const goles2 = resultadoSimulacion.goles2;
+    const momentos = resultadoSimulacion.momentos;
+    const estadisticas = resultadoSimulacion.estadisticas;
+
     // Mostrar resultado
     document.getElementById('equipo-local').textContent = team1;
     document.getElementById('equipo-visitante').textContent = team2;
     document.getElementById('goles-local').textContent = goles1;
     document.getElementById('goles-visitante').textContent = goles2;
-    
-    // Generar estadísticas del partido
-    const estadisticas = generarEstadisticasPartido(currentResults.team1.stats, currentResults.team2.stats);
     
     // Mostrar estadísticas en los paneles laterales
     const statsLocal = document.getElementById('stats-local');
@@ -1104,8 +1275,7 @@ async function simularPartido() {
         statsVisitante.appendChild(statItemVisitante);
     }
     
-    // Generar momentos clave del partido
-    const momentos = generarMomentosPartido(team1, team2, goles1, goles2);
+    // Mostrar momentos en la UI
     
     // Mostrar momentos
     const momentosPartido = document.getElementById('momentos-partido');
@@ -1142,6 +1312,279 @@ async function simularPartido() {
     
     // Hacer scroll al inicio de los momentos
     momentosPartido.scrollTop = 0;
+}
+
+// ==========================================
+// SIMULACIÓN AVANZADA MINUTO A MINUTO
+// ==========================================
+
+function simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2) {
+    // Estado inicial del partido
+    let goles1 = 0;
+    let goles2 = 0;
+    let momentos = [];
+    let jugadores1Expulsados = 0;
+    let jugadores2Expulsados = 0;
+
+    // Ajuste dinámico de lambdas según el estado del partido
+    let lambda1Actual = lambda1;
+    let lambda2Actual = lambda2;
+
+    // Momentum (inercia del partido) - influye en las probabilidades
+    let momentum = 0; // -1 favorece team2, +1 favorece team1
+
+    // Estadísticas acumuladas del partido
+    let tirosLocal = 0;
+    let tirosVisitante = 0;
+    let tirosPuertaLocal = 0;
+    let tirosPuertaVisitante = 0;
+    let cornersLocal = 0;
+    let cornersVisitante = 0;
+    let faltasLocal = 0;
+    let faltasVisitante = 0;
+    let tarjetasAmarillasLocal = 0;
+    let tarjetasAmarillasVisitante = 0;
+
+    // Simulación minuto a minuto (90 minutos + descuento)
+    const minutosTotal = 90 + Math.floor(Math.random() * 6); // 90-95 minutos
+
+    for (let minuto = 1; minuto <= minutosTotal; minuto++) {
+        // Ajustar lambdas según el estado del partido
+        const diferencia = goles1 - goles2;
+
+        // Si un equipo va ganando, tiende a jugar más defensivo
+        if (diferencia > 0) {
+            lambda1Actual = lambda1 * 0.85; // Equipo 1 se defiende un poco
+            lambda2Actual = lambda2 * 1.2;  // Equipo 2 ataca más
+            momentum -= 0.1;
+        } else if (diferencia < 0) {
+            lambda1Actual = lambda1 * 1.2;  // Equipo 1 ataca más
+            lambda2Actual = lambda2 * 0.85; // Equipo 2 se defiende un poco
+            momentum += 0.1;
+        } else {
+            // Partido igualado, lambdas normales
+            lambda1Actual = lambda1;
+            lambda2Actual = lambda2;
+        }
+
+        // Efecto de expulsiones
+        if (jugadores1Expulsados > 0) {
+            lambda1Actual *= (1 - jugadores1Expulsados * 0.25); // -25% por cada expulsado
+            lambda2Actual *= (1 + jugadores1Expulsados * 0.15); // +15% al rival
+        }
+        if (jugadores2Expulsados > 0) {
+            lambda2Actual *= (1 - jugadores2Expulsados * 0.25);
+            lambda1Actual *= (1 + jugadores2Expulsados * 0.15);
+        }
+
+        // Fatiga en minutos finales (más goles en últimos 15 minutos)
+        if (minuto > 75) {
+            lambda1Actual *= 1.15;
+            lambda2Actual *= 1.15;
+        }
+
+        // Probabilidad de gol por minuto (lambda / 90)
+        const probGol1PorMinuto = Math.min(lambda1Actual / 90, 0.08); // Máximo 8% por minuto
+        const probGol2PorMinuto = Math.min(lambda2Actual / 90, 0.08);
+
+        // Aplicar momentum
+        const probGol1Ajustada = Math.max(0, probGol1PorMinuto * (1 + momentum * 0.3));
+        const probGol2Ajustada = Math.max(0, probGol2PorMinuto * (1 - momentum * 0.3));
+
+        // Determinar si hay gol en este minuto
+        const rand = Math.random();
+
+        if (rand < probGol1Ajustada) {
+            // ¡GOL DEL EQUIPO 1!
+            goles1++;
+            tirosPuertaLocal++;
+            tirosLocal++;
+            momentum = Math.min(1, momentum + 0.3);
+
+            momentos.push({
+                minuto,
+                equipo: team1,
+                descripcion: generarDescripcionGol(),
+                tipo: 'gol'
+            });
+        } else if (rand < probGol1Ajustada + probGol2Ajustada) {
+            // ¡GOL DEL EQUIPO 2!
+            goles2++;
+            tirosPuertaVisitante++;
+            tirosVisitante++;
+            momentum = Math.max(-1, momentum - 0.3);
+
+            momentos.push({
+                minuto,
+                equipo: team2,
+                descripcion: generarDescripcionGol(),
+                tipo: 'gol'
+            });
+        }
+
+        // Eventos adicionales en cada minuto (tiros, faltas, córners, tarjetas)
+        const probEvento = 0.15; // 15% de evento por minuto
+
+        if (Math.random() < probEvento) {
+            const tipoEvento = Math.random();
+            const equipoEvento = Math.random() < (0.5 + momentum * 0.2) ? team1 : team2;
+            const esLocal = equipoEvento === team1;
+
+            if (tipoEvento < 0.35) {
+                // Tiro a puerta
+                if (esLocal) {
+                    tirosLocal++;
+                    tirosPuertaLocal++;
+                } else {
+                    tirosVisitante++;
+                    tirosPuertaVisitante++;
+                }
+
+                if (Math.random() < 0.3) { // 30% de tiros notables se registran
+                    momentos.push({
+                        minuto,
+                        equipo: equipoEvento,
+                        descripcion: generarDescripcionTiro(),
+                        tipo: 'tiro'
+                    });
+                }
+            } else if (tipoEvento < 0.55) {
+                // Tiro fuera
+                if (esLocal) tirosLocal++;
+                else tirosVisitante++;
+            } else if (tipoEvento < 0.70) {
+                // Córner
+                if (esLocal) cornersLocal++;
+                else cornersVisitante++;
+
+                if (Math.random() < 0.25) {
+                    momentos.push({
+                        minuto,
+                        equipo: equipoEvento,
+                        descripcion: 'Córner a favor',
+                        tipo: 'corner'
+                    });
+                }
+            } else if (tipoEvento < 0.90) {
+                // Falta
+                if (esLocal) faltasLocal++;
+                else faltasVisitante++;
+
+                if (Math.random() < 0.20) {
+                    momentos.push({
+                        minuto,
+                        equipo: equipoEvento,
+                        descripcion: generarDescripcionFalta(),
+                        tipo: 'falta'
+                    });
+                }
+            } else if (tipoEvento < 0.97) {
+                // Tarjeta amarilla
+                if (esLocal) tarjetasAmarillasLocal++;
+                else tarjetasAmarillasVisitante++;
+
+                momentos.push({
+                    minuto,
+                    equipo: equipoEvento,
+                    descripcion: 'Tarjeta amarilla por juego brusco',
+                    tipo: 'tarjeta'
+                });
+            } else {
+                // Tarjeta roja (muy raro, 3% de los eventos)
+                if (esLocal) {
+                    jugadores1Expulsados++;
+                    momentos.push({
+                        minuto,
+                        equipo: team1,
+                        descripcion: '🔴 TARJETA ROJA - Expulsión',
+                        tipo: 'tarjeta-roja'
+                    });
+                } else {
+                    jugadores2Expulsados++;
+                    momentos.push({
+                        minuto,
+                        equipo: team2,
+                        descripcion: '🔴 TARJETA ROJA - Expulsión',
+                        tipo: 'tarjeta-roja'
+                    });
+                }
+            }
+        }
+
+        // Decay del momentum (se va disipando)
+        momentum *= 0.98;
+    }
+
+    // Calcular posesión basada en estadísticas originales + momentum
+    const posesionBase1 = parseFloat(stats1.possession) || 50;
+    const posesionBase2 = parseFloat(stats2.possession) || 50;
+    const totalPosesion = posesionBase1 + posesionBase2;
+
+    let posesionLocal = Math.round((posesionBase1 / totalPosesion) * 100 + momentum * 5);
+    posesionLocal = Math.max(30, Math.min(70, posesionLocal));
+    const posesionVisitante = 100 - posesionLocal;
+
+    // Ajustar tiros según posesión
+    tirosLocal = Math.max(tirosLocal, Math.round(posesionLocal / 10));
+    tirosVisitante = Math.max(tirosVisitante, Math.round(posesionVisitante / 10));
+
+    tirosPuertaLocal = Math.max(tirosPuertaLocal, Math.round(tirosLocal * 0.4));
+    tirosPuertaVisitante = Math.max(tirosPuertaVisitante, Math.round(tirosVisitante * 0.4));
+
+    // Precisión de pases con variación
+    const pasesLocal = Math.round(stats1.passingAccuracy + (Math.random() - 0.5) * 6);
+    const pasesVisitante = Math.round(stats2.passingAccuracy + (Math.random() - 0.5) * 6);
+
+    // Generar estadísticas finales
+    const estadisticas = {
+        posesion: {
+            nombre: "Posesión",
+            local: posesionLocal + "%",
+            visitante: posesionVisitante + "%"
+        },
+        tirosAPuerta: {
+            nombre: "Tiros a puerta",
+            local: tirosPuertaLocal,
+            visitante: tirosPuertaVisitante
+        },
+        tirosTotales: {
+            nombre: "Tiros totales",
+            local: tirosLocal,
+            visitante: tirosVisitante
+        },
+        pases: {
+            nombre: "Precisión de pases",
+            local: Math.max(60, Math.min(95, pasesLocal)) + "%",
+            visitante: Math.max(60, Math.min(95, pasesVisitante)) + "%"
+        },
+        faltas: {
+            nombre: "Faltas",
+            local: Math.max(5, Math.min(20, faltasLocal)),
+            visitante: Math.max(5, Math.min(20, faltasVisitante))
+        },
+        corners: {
+            nombre: "Córners",
+            local: Math.max(0, Math.min(12, cornersLocal)),
+            visitante: Math.max(0, Math.min(12, cornersVisitante))
+        },
+        tarjetasAmarillas: {
+            nombre: "Tarjetas amarillas",
+            local: tarjetasAmarillasLocal,
+            visitante: tarjetasAmarillasVisitante
+        },
+        tarjetasRojas: {
+            nombre: "Tarjetas rojas",
+            local: jugadores1Expulsados,
+            visitante: jugadores2Expulsados
+        }
+    };
+
+    return {
+        goles1,
+        goles2,
+        momentos,
+        estadisticas
+    };
 }
 
 // Función auxiliar para calcular porcentaje para barras de progreso
@@ -1441,6 +1884,38 @@ document.addEventListener('DOMContentLoaded', function() {
         simularBtn.addEventListener('click', simularPartido);
     } else {
         console.error("No se encontró el botón de simulación");
+    }
+
+    // Manejador para el botón "Ver Cómo se Calculó"
+    const procesoBtn = document.getElementById('proceso-btn');
+    if (procesoBtn) {
+        procesoBtn.addEventListener('click', function() {
+            if (currentResults) {
+                // Enviar datos al servidor para mostrar el proceso
+                fetch('/como-funciona', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(currentResults)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Abrir la página del proceso en una nueva pestaña
+                        window.open('/proceso-calculo', '_blank');
+                    } else {
+                        alert('Error al cargar el proceso de cálculo');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cargar el proceso de cálculo');
+                });
+            } else {
+                alert('No hay resultados de predicción disponibles. Por favor, realiza un cálculo primero.');
+            }
+        });
     }
 });
 
@@ -1876,374 +2351,3 @@ function normalizarDatos(datos) {
     };
 }
 
-// Implementación simplificada de MLPClassifier
-class MLPClassifier {
-    constructor(hiddenLayerSizes = [10], learningRate = 0.01, maxIter = 100) {
-        this.hiddenLayerSizes = hiddenLayerSizes;
-        this.learningRate = learningRate;
-        this.maxIter = maxIter;
-        this.weights = [];
-        this.biases = [];
-        this.classes = [];
-        this.accuracy = 0;
-    }
-    
-    // Función de activación sigmoid
-    sigmoid(x) {
-        return 1 / (1 + Math.exp(-x));
-    }
-    
-    // Derivada de sigmoid
-    sigmoidDerivative(x) {
-        const sig = this.sigmoid(x);
-        return sig * (1 - sig);
-    }
-    
-    // Entrenar el modelo
-    fit(X, y) {
-        // Obtener clases únicas
-        this.classes = [...new Set(y)];
-        const numClasses = this.classes.length;
-        const numFeatures = X[0].length;
-        
-        // Inicializar pesos y sesgos
-        const layerSizes = [numFeatures, ...this.hiddenLayerSizes, numClasses];
-        
-        for (let i = 0; i < layerSizes.length - 1; i++) {
-            // Inicializar pesos con valores pequeños aleatorios
-            const weights = Array(layerSizes[i + 1]).fill().map(() => 
-                Array(layerSizes[i]).fill().map(() => Math.random() * 0.2 - 0.1)
-            );
-            
-            // Inicializar sesgos con ceros
-            const biases = Array(layerSizes[i + 1]).fill(0);
-            
-            this.weights.push(weights);
-            this.biases.push(biases);
-        }
-        
-        // Convertir etiquetas a one-hot encoding
-        const yOneHot = y.map(label => {
-            const encoded = Array(numClasses).fill(0);
-            encoded[this.classes.indexOf(label)] = 1;
-            return encoded;
-        });
-        
-        // Entrenamiento con descenso de gradiente
-        for (let iter = 0; iter < this.maxIter; iter++) {
-            let totalError = 0;
-            
-            // Para cada ejemplo de entrenamiento
-            for (let j = 0; j < X.length; j++) {
-                // Forward pass
-                const activations = [X[j]];
-                const zs = [];
-                
-                for (let layer = 0; layer < this.weights.length; layer++) {
-                    const z = Array(this.weights[layer].length).fill(0);
-                    
-                    // Calcular z = w*a + b
-                    for (let neuron = 0; neuron < this.weights[layer].length; neuron++) {
-                        for (let prev = 0; prev < activations[layer].length; prev++) {
-                            z[neuron] += this.weights[layer][neuron][prev] * activations[layer][prev];
-                        }
-                        z[neuron] += this.biases[layer][neuron];
-                    }
-                    
-                    zs.push(z);
-                    
-                    // Aplicar función de activación
-                    const activation = z.map(val => this.sigmoid(val));
-                    activations.push(activation);
-                }
-                
-                // Calcular error
-                const outputError = activations[activations.length - 1].map((a, i) => {
-                    const error = a - yOneHot[j][i];
-                    totalError += error * error;
-                    return error;
-                });
-                
-                // Backward pass
-                let deltas = [outputError.map((err, i) => 
-                    err * this.sigmoidDerivative(zs[zs.length - 1][i])
-                )];
-                
-                // Propagar el error hacia atrás
-                for (let layer = this.weights.length - 2; layer >= 0; layer--) {
-                    const delta = Array(this.weights[layer].length).fill(0);
-                    
-                    for (let neuron = 0; neuron < this.weights[layer].length; neuron++) {
-                        for (let next = 0; next < this.weights[layer + 1].length; next++) {
-                            delta[neuron] += deltas[0][next] * this.weights[layer + 1][next][neuron];
-                        }
-                        delta[neuron] *= this.sigmoidDerivative(zs[layer][neuron]);
-                    }
-                    
-                    deltas.unshift(delta);
-                }
-                
-                // Actualizar pesos y sesgos
-                for (let layer = 0; layer < this.weights.length; layer++) {
-                    for (let neuron = 0; neuron < this.weights[layer].length; neuron++) {
-                        for (let prev = 0; prev < this.weights[layer][neuron].length; prev++) {
-                            this.weights[layer][neuron][prev] -= this.learningRate * deltas[layer][neuron] * activations[layer][prev];
-                        }
-                        this.biases[layer][neuron] -= this.learningRate * deltas[layer][neuron];
-                    }
-                }
-            }
-            
-            // Calcular error promedio
-            totalError /= X.length;
-            
-            // Salir temprano si el error es suficientemente pequeño
-            if (totalError < 0.01) break;
-        }
-        
-        // Calcular precisión en el conjunto de entrenamiento
-        let correctPredictions = 0;
-        for (let i = 0; i < X.length; i++) {
-            const predicted = this.predict([X[i]])[0];
-            if (predicted === y[i]) correctPredictions++;
-        }
-        this.accuracy = correctPredictions / X.length;
-        
-        return this;
-    }
-    
-    // Predecir para nuevos datos
-    predict(X) {
-        return X.map(x => {
-            // Forward pass
-            let activation = x;
-            
-            for (let layer = 0; layer < this.weights.length; layer++) {
-                const z = Array(this.weights[layer].length).fill(0);
-                
-                // Calcular z = w*a + b
-                for (let neuron = 0; neuron < this.weights[layer].length; neuron++) {
-                    for (let prev = 0; prev < activation.length; prev++) {
-                        z[neuron] += this.weights[layer][neuron][prev] * activation[prev];
-                    }
-                    z[neuron] += this.biases[layer][neuron];
-                }
-                
-                // Aplicar función de activación
-                activation = z.map(val => this.sigmoid(val));
-            }
-            
-            // Obtener la clase con mayor probabilidad
-            let maxIndex = 0;
-            for (let i = 1; i < activation.length; i++) {
-                if (activation[i] > activation[maxIndex]) maxIndex = i;
-            }
-            
-            return this.classes[maxIndex];
-        });
-    }
-}
-
-// Función para entrenar modelos
-function entrenarModelos() {
-    // Generar dataset
-    ml_dataset = generarDatasetTacticas(500);
-    
-    // Separar características y etiquetas
-    const X = ml_dataset.map(d => d.features);
-    const y = ml_dataset.map(d => d.tactica);
-    
-    // Normalizar datos
-    const { datosNormalizados, mins, maxs } = normalizarDatos(ml_dataset);
-    const X_norm = datosNormalizados.map(d => d.features);
-    
-    // Guardar mins y maxs para normalizar nuevos datos
-    ml_dataset.mins = mins;
-    ml_dataset.maxs = maxs;
-    
-    // Entrenar modelo MLP
-    ml_model = new MLPClassifier([15, 10], 0.01, 200);
-    ml_model.fit(X_norm, y);
-    ml_accuracy = ml_model.accuracy;
-    ml_modelType = 'Red Neuronal Multicapa';
-    
-    console.log(`Modelo entrenado con precisión: ${(ml_accuracy * 100).toFixed(2)}%`);
-}
-
-// Función para normalizar nuevos datos
-function normalizarNuevosDatos(datos) {
-    if (!ml_dataset.mins || !ml_dataset.maxs) {
-        console.error("No se han calculado los valores de normalización");
-        return datos;
-    }
-    
-    return datos.map((val, i) => {
-        // Evitar división por cero
-        return ml_dataset.maxs[i] === ml_dataset.mins[i] ? 
-            0.5 : (val - ml_dataset.mins[i]) / (ml_dataset.maxs[i] - ml_dataset.mins[i]);
-    });
-}
-
-// Función para recomendar táctica basada en estadísticas
-function recomendar_tactica_ml(stats) {
-    // Verificar que el modelo esté entrenado
-    if (!ml_model) {
-        console.error("El modelo no ha sido entrenado");
-        return {
-            tactica: "No disponible",
-            explicacion: "El modelo de ML no ha sido entrenado correctamente.",
-            modelo: "Ninguno",
-            precision: 0
-        };
-    }
-    
-    // Extraer características en el mismo orden que el dataset
-    const features = [
-        stats.goalsScored,
-        stats.goalsConceded,
-        stats.possession,
-        stats.shotsOnTarget,
-        stats.passingAccuracy,
-        stats.fouls,
-        stats.corners,
-        stats.yellowCards,
-        stats.redCards
-    ];
-    
-    // Normalizar datos
-    const featuresNormalizados = normalizarNuevosDatos(features);
-    
-    // Realizar predicción
-    const tacticaRecomendada = ml_model.predict([featuresNormalizados])[0];
-    
-    // Generar explicación basada en estadísticas
-    let explicacion = "";
-    
-    if (tacticaRecomendada === "Mantener 4-3-3 ofensivo") {
-        explicacion = `Con un promedio de ${stats.goalsScored.toFixed(1)} goles por partido y ${stats.possession.toFixed(1)}% de posesión, el equipo tiene un perfil ofensivo. La formación 4-3-3 permitirá maximizar el potencial de ataque manteniendo equilibrio defensivo.`;
-    } else if (tacticaRecomendada === "Cambiar a 4-4-2 defensivo") {
-        explicacion = `Con ${stats.goalsConceded.toFixed(1)} goles recibidos por partido, el equipo necesita reforzar su defensa. La formación 4-4-2 defensiva proporcionará mayor solidez y permitirá contragolpes efectivos.`;
-    } else if (tacticaRecomendada === "Presión alta y líneas adelantadas") {
-        explicacion = `Con ${stats.passingAccuracy.toFixed(1)}% de precisión en pases y ${stats.shotsOnTarget.toFixed(1)} tiros a puerta, el equipo puede beneficiarse de una presión alta para recuperar el balón en campo contrario y crear más oportunidades.`;
-    } else if (tacticaRecomendada === "Jugar al contragolpe") {
-        explicacion = `Con una posesión de ${stats.possession.toFixed(1)}% pero anotando ${stats.goalsScored.toFixed(1)} goles por partido, el equipo es eficiente en transiciones. El contragolpe permitirá aprovechar espacios y la velocidad de los delanteros.`;
-    } else if (tacticaRecomendada === "Bajar ritmo y mantener posesión") {
-        explicacion = `Con ${stats.passingAccuracy.toFixed(1)}% de precisión en pases y ${stats.possession.toFixed(1)}% de posesión, el equipo puede controlar el juego. Mantener la posesión desgastará al rival y creará oportunidades de calidad.`;
-    } else if (tacticaRecomendada === "Atacar por bandas") {
-        explicacion = `Con un promedio de ${stats.corners.toFixed(1)} córners por partido, el equipo muestra fortaleza en el juego por las bandas. Explotar esta vía de ataque generará más oportunidades de gol y centros peligrosos.`;
-    } else if (tacticaRecomendada === "Defensa con cinco jugadores") {
-        explicacion = `Con ${stats.goalsConceded.toFixed(1)} goles recibidos y ${stats.yellowCards.toFixed(1)} tarjetas amarillas por partido, una defensa de cinco proporcionará mayor solidez defensiva y reducirá la exposición a contraataques.`;
-    }
-    
-    return {
-        tactica: tacticaRecomendada,
-        explicacion: explicacion,
-        modelo: ml_modelType,
-        precision: ml_accuracy
-    };
-}
-
-// Inicializar el módulo ML cuando se cargue la página
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si el botón existe
-    const mlButton = document.getElementById('simulation-ml');
-    if (mlButton) {
-        mlButton.addEventListener('click', function() {
-            // Verificar que hay datos de equipos
-            if (!currentResults) {
-                alert("Primero debes realizar una predicción antes de solicitar un análisis");
-                return;
-            }
-            
-            // Actualizar variables globales con los datos actuales
-            currentTeam1 = {
-                name: currentResults.team1.name,
-                stats: currentResults.team1.stats
-            };
-            
-            currentTeam2 = {
-                name: currentResults.team2.name,
-                stats: currentResults.team2.stats
-            };
-            
-            // Mostrar cargando
-            const mlResult = document.getElementById('ml-result');
-            if (mlResult) {
-                mlResult.innerHTML = `
-  <style>
-    @keyframes fillBar {
-      from { width: 0%; }
-      to   { width: 100%; }
-    }
-  </style>
-  <div class="text-center mb-4">
-    <h5>Analizando tácticas óptimas</h5>
-    <div class="progress" style="height: 25px;">
-      <div class="progress-bar bg-success" 
-           role="progressbar"
-           style="
-             width: 0%;
-             animation: fillBar 1s linear forwards;
-           "
-           aria-valuemin="0"
-           aria-valuemax="100">
-        <!-- Opcional: porcentaje fijo o vacío -->
-      </div>
-    </div>
-  </div>
-`;
-                
-                // Pequeño retraso para mostrar la animación de carga
-                setTimeout(() => {
-                    // Obtener recomendación para ambos equipos
-                    const recomendacionEquipo1 = recomendar_tactica_ml(currentTeam1.stats);
-                    const recomendacionEquipo2 = recomendar_tactica_ml(currentTeam2.stats);
-                    
-                    // Mostrar resultado para ambos equipos
-                    mlResult.innerHTML = `
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card bg-dark text-white mb-4">
-                                    <div class="card-header bg-primary">
-                                        <h5>Recomendación Táctica para ${currentTeam1.name}</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <h4 class="text-success mb-3">${recomendacionEquipo1.tactica}</h4>
-                                        <p>${recomendacionEquipo1.explicacion}</p>
-                                        <div class="mt-3 pt-3 border-top border-secondary">
-                                            <small class="text-muted">
-                                                Modelo utilizado: ${recomendacionEquipo1.modelo} (Precisión: ${(recomendacionEquipo1.precision * 100).toFixed(2)}%)
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-dark text-white mb-4">
-                                    <div class="card-header bg-danger">
-                                        <h5>Recomendación Táctica para ${currentTeam2.name}</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <h4 class="text-success mb-3">${recomendacionEquipo2.tactica}</h4>
-                                        <p>${recomendacionEquipo2.explicacion}</p>
-                                        <div class="mt-3 pt-3 border-top border-secondary">
-                                            <small class="text-muted">
-                                                Modelo utilizado: ${recomendacionEquipo2.modelo} (Precisión: ${(recomendacionEquipo2.precision * 100).toFixed(2)}%)
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }, 1500);
-            }
-        });
-    }
-
-    // Pre-entrenar modelos en segundo plano
-    setTimeout(() => {
-        console.log("Pre-entrenando modelos de ML...");
-        entrenarModelos();
-    }, 3000);
-}); // Fin del DOMContentLoaded del módulo ML

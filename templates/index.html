@@ -19,6 +19,7 @@
                 </div>
                 <div style="flex: 1; text-align: right;">
                     {% if current_user.is_authenticated %}
+                        <span class="text-light me-3">👤 {{ current_user.username }}</span>
                         <a href="/dashboard" class="btn btn-sm btn-outline-light me-2">📊 Mi Dashboard</a>
                         <a href="/logout" class="btn btn-sm btn-outline-danger">Cerrar Sesión</a>
                     {% else %}
@@ -200,7 +201,7 @@
                                 <div class="col-md-6">
                                     <div class="card bg-light">
                                         <div class="card-body text-center">
-                                            <h4><i class="fas fa-chart-bar me-2"></i>Comparativa de Estadísticas</h4>
+                                            <h4 class="text-light"><i class="fas fa-chart-bar me-2"></i>Comparativa de Estadísticas</h4>
                                             <canvas id="stats-chart"></canvas>
                                         </div>
                                     </div>
@@ -208,10 +209,10 @@
                                 <div class="col-md-6">
                                     <div class="card bg-light">
                                         <div class="card-body">
-                                            <h4 class="text-center mb-3"><i class="fas fa-calculator me-2"></i>Desglose de Modelos</h4>
+                                            <h4 class="text-center mb-3 text-light"><i class="fas fa-calculator me-2"></i>Desglose de Modelos</h4>
                                             <div class="mb-3">
                                                 <div class="d-flex justify-content-between mb-2">
-                                                    <strong>Poisson Bivariado:</strong>
+                                                    <strong class="text-light">Poisson Bivariado:</strong>
                                                     <span id="poisson-result" class="badge bg-primary">--%</span>
                                                 </div>
                                                 <div class="progress" style="height: 25px;">
@@ -220,7 +221,7 @@
                                             </div>
                                             <div class="mb-3">
                                                 <div class="d-flex justify-content-between mb-2">
-                                                    <strong>Regresión Logística:</strong>
+                                                    <strong class="text-light">Regresión Logística:</strong>
                                                     <span id="logistic-result" class="badge bg-success">--%</span>
                                                 </div>
                                                 <div class="progress" style="height: 25px;">
@@ -236,7 +237,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="text-center mt-4">
                                 <button class="btn btn-info btn-lg" id="explanation-btn">
                                     <i class="fas fa-robot me-2"></i>Ver Explicación Detallada
@@ -244,14 +245,11 @@
                                 <button class="btn btn-success btn-lg ms-2" id="simular-btn">
                                     <i class="fas fa-futbol me-2"></i>Simular Partido
                                 </button>
-                                <button class="btn btn-success btn-lg ms-2" id="simulation-ml">
-                                    <i class="fas fa-futbol me-2"></i>Machine learning tactics🔥(En pruebas)
+                                <button class="btn btn-primary btn-lg ms-2" id="proceso-btn">
+                                    <i class="fas fa-graduation-cap me-2"></i>Ver Cómo se Calculó
                                 </button>
-                                
+
                             </div>
-                            
-                            <!-- Contenedor para resultados de Machine Learning -->
-                            <div id="ml-result" class="mt-4"></div>
                             
                             <!-- Modal para la explicación de IA -->
                             <div class="modal fade" id="explanation-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
