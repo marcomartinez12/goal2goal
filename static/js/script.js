@@ -231,11 +231,17 @@ function clearFormData() {
     
     // Reiniciar resultados actuales
     currentResults = null;
-    
-    // Opcional: mostrar mensaje en la terminal si está visible
+
+    // Limpiar la terminal completamente
     const terminal = document.getElementById('terminal-content');
-    if (terminal && document.getElementById('results-section').style.display !== 'none') {
+    if (terminal) {
         terminal.innerHTML = '<div class="line">$ Todos los campos han sido limpiados.</div>';
+    }
+
+    // Limpiar el panel What-If si existe
+    const whatIfContainer = document.getElementById('what-if-container');
+    if (whatIfContainer) {
+        whatIfContainer.innerHTML = '';
     }
 }
 
@@ -531,6 +537,25 @@ async function calculatePrediction() {
     const saveBtn = document.getElementById('save-prediction-btn');
     if (saveBtn) {
         saveBtn.style.display = 'inline-block';
+    }
+
+    // Inicializar panel "¿Qué pasaría si...?"
+    if (typeof initWhatIfPanel === 'function') {
+        initWhatIfPanel({
+            team1Name: team1,
+            team2Name: team2,
+            goalsScored1: stats1.goalsScored,
+            goalsConceded1: stats1.goalsConceded,
+            shotsOnTarget1: stats1.shotsOnTarget,
+            effectiveness1: stats1.passingAccuracy / 100, // Convertir a decimal
+            possession1: stats1.possession,
+            goalsScored2: stats2.goalsScored,
+            goalsConceded2: stats2.goalsConceded,
+            shotsOnTarget2: stats2.shotsOnTarget,
+            effectiveness2: stats2.passingAccuracy / 100, // Convertir a decimal
+            possession2: stats2.possession,
+            bttsProb: finalBTTSProb
+        });
     }
 
     // Mensaje final
