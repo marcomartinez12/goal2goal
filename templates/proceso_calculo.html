@@ -400,6 +400,180 @@
             color: #00d4ff;
             font-size: 0.9rem;
         }
+
+        /* Estilos para botones de análisis */
+        .analysis-button {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .analysis-button:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 160, 227, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 160, 227, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .analysis-button-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .analysis-button-content {
+            flex: 1;
+        }
+
+        .analysis-button-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .analysis-button-desc {
+            font-size: 0.95rem;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        /* Spinner de Bootstrap */
+        .spinner-border {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: text-bottom;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+
+        .text-primary { color: #00a0e3 !important; }
+        .text-danger { color: #ff6636 !important; }
+
+        /* Estilos para contenido HTML de IA */
+        #ia-content h3 {
+            color: #00a0e3;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid rgba(0, 160, 227, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        #ia-content h4 {
+            color: #ff6636;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        #ia-content p {
+            color: #d0d0d0;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        #ia-content strong {
+            color: #00a0e3;
+            font-weight: 600;
+        }
+
+        #ia-content ul, #ia-content ol {
+            color: #d0d0d0;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        #ia-content code {
+            background: #1a1a1a;
+            color: #00a0e3;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        #close-ia-modal:hover,
+        #close-mc-modal:hover {
+            background: rgba(255, 102, 54, 0.3);
+            transform: rotate(90deg);
+        }
+
+        /* Animaciones para loading */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes loading-bar {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Cursor parpadeante para efecto de escritura */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: #00a0e3;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Scrollbar personalizado para contenido IA */
+        #ia-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #ia-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        #ia-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00a0e3, #0080b8);
+            border-radius: 4px;
+        }
+
+        #ia-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #00d4ff, #00a0e3);
+        }
     </style>
 </head>
 <body>

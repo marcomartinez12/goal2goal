@@ -28,7 +28,10 @@
                     {% endif %}
                 </div>
             </div>
-            <p class="lead">Predicción BTTS (Both Teams To Score) con Poisson Bivariado y Regresión Logística</p>
+            <p class="lead">Predicción BTTS (Both Teams To Score) con Poisson Bivariado y Regresión Logística <br>
+                Ingresa las siguientes estadísticas ambos equipos y luego haz clic en calcular predicción
+                
+            </p>
         </header>
 
         <div class="row">
@@ -45,43 +48,79 @@
                                         <h4 class="text-center mb-3">Equipo Local</h4>
                                         <div class="mb-3">
                                             <label for="team1" class="form-label">Nombre del Equipo 1</label>
-                                            <input type="text" class="form-control" id="team1" required>
+                                            <input type="text" class="form-control" id="team1" placeholder="Ej: Real Madrid" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="goalsScored1" class="form-label">Goles promedio anotados</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored1" required>
+                                            <label for="goalsScored1" class="form-label">
+                                                Goles promedio anotados
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de goles que anota este equipo por partido. Típico: 0.8 - 3.0"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored1" placeholder="Ej: 2.1" required>
+                                            <small class="form-text text-muted">Rango típico: 0.8 - 3.0 goles</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="goalsConceded1" class="form-label">Goles promedio recibidos</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded1" required>
+                                            <label for="goalsConceded1" class="form-label">
+                                                Goles promedio recibidos
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de goles que recibe este equipo por partido. Típico: 0.5 - 2.5"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded1" placeholder="Ej: 1.3" required>
+                                            <small class="form-text text-muted">Rango típico: 0.5 - 2.5 goles</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="possession1" class="form-label">Posesión de balón (%)</label>
-                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession1" required>
+                                            <label for="possession1" class="form-label">
+                                                Posesión de balón (%)
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Porcentaje promedio de posesión del balón. Típico: 35% - 70%"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession1" placeholder="Ej: 58" required>
+                                            <small class="form-text text-muted">Rango típico: 35% - 70%</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="shotsOnTarget1" class="form-label">Tiros a puerta por partido</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget1" required>
+                                            <label for="shotsOnTarget1" class="form-label">
+                                                Tiros a puerta por partido
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de tiros a puerta (dentro del marco) por partido. Típico: 3 - 8"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget1" placeholder="Ej: 5.2" required>
+                                            <small class="form-text text-muted">Rango típico: 3 - 8 tiros</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="passingAccuracy1" class="form-label">Precisión de pases (%)</label>
-                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy1" required>
+                                            <label for="passingAccuracy1" class="form-label">
+                                                Precisión de pases (%)
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Porcentaje de pases completados exitosamente. Típico: 65% - 90%"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy1" placeholder="Ej: 82" required>
+                                            <small class="form-text text-muted">Rango típico: 65% - 90%</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="fouls1" class="form-label">Faltas cometidas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls1" required>
+                                            <label for="fouls1" class="form-label">
+                                                Faltas cometidas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de faltas cometidas por partido. Típico: 8 - 16"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls1" placeholder="Ej: 12" required>
+                                            <small class="form-text text-muted">Rango típico: 8 - 16 faltas</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="corners1" class="form-label">Promedio de corners</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners1" required>
+                                            <label for="corners1" class="form-label">
+                                                Promedio de corners
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de tiros de esquina por partido. Típico: 3 - 8"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners1" placeholder="Ej: 5.5" required>
+                                            <small class="form-text text-muted">Rango típico: 3 - 8 corners</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="yellowCards1" class="form-label">Tarjetas amarillas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards1" required>
+                                            <label for="yellowCards1" class="form-label">
+                                                Tarjetas amarillas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de tarjetas amarillas por partido. Típico: 1 - 4"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards1" placeholder="Ej: 2.3" required>
+                                            <small class="form-text text-muted">Rango típico: 1 - 4 amarillas</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="redCards1" class="form-label">Tarjetas rojas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards1" required>
+                                            <label for="redCards1" class="form-label">
+                                                Tarjetas rojas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="right" title="Promedio de tarjetas rojas por partido. Típico: 0 - 0.3"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards1" placeholder="Ej: 0.1" required>
+                                            <small class="form-text text-muted">Rango típico: 0 - 0.3 rojas</small>
                                         </div>
                                     </div>
                                 </div>
@@ -90,43 +129,79 @@
                                         <h4 class="text-center mb-3">Equipo Visitante</h4>
                                         <div class="mb-3">
                                             <label for="team2" class="form-label">Nombre del Equipo 2</label>
-                                            <input type="text" class="form-control" id="team2" required>
+                                            <input type="text" class="form-control" id="team2" placeholder="Ej: Barcelona" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="goalsScored2" class="form-label">Goles promedio anotados</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored2" required>
+                                            <label for="goalsScored2" class="form-label">
+                                                Goles promedio anotados
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de goles que anota este equipo por partido. Típico: 0.8 - 3.0"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsScored2" placeholder="Ej: 2.3" required>
+                                            <small class="form-text text-muted">Rango típico: 0.8 - 3.0 goles</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="goalsConceded2" class="form-label">Goles promedio recibidos</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded2" required>
+                                            <label for="goalsConceded2" class="form-label">
+                                                Goles promedio recibidos
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de goles que recibe este equipo por partido. Típico: 0.5 - 2.5"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="goalsConceded2" placeholder="Ej: 1.2" required>
+                                            <small class="form-text text-muted">Rango típico: 0.5 - 2.5 goles</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="possession2" class="form-label">Posesión de balón (%)</label>
-                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession2" required>
+                                            <label for="possession2" class="form-label">
+                                                Posesión de balón (%)
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Porcentaje promedio de posesión del balón. Típico: 35% - 70%"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="possession2" placeholder="Ej: 54" required>
+                                            <small class="form-text text-muted">Rango típico: 35% - 70%</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="shotsOnTarget2" class="form-label">Tiros a puerta por partido</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget2" required>
+                                            <label for="shotsOnTarget2" class="form-label">
+                                                Tiros a puerta por partido
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de tiros a puerta (dentro del marco) por partido. Típico: 3 - 8"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="shotsOnTarget2" placeholder="Ej: 5.5" required>
+                                            <small class="form-text text-muted">Rango típico: 3 - 8 tiros</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="passingAccuracy2" class="form-label">Precisión de pases (%)</label>
-                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy2" required>
+                                            <label for="passingAccuracy2" class="form-label">
+                                                Precisión de pases (%)
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Porcentaje de pases completados exitosamente. Típico: 65% - 90%"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" max="100" class="form-control stats-input" id="passingAccuracy2" placeholder="Ej: 80" required>
+                                            <small class="form-text text-muted">Rango típico: 65% - 90%</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="fouls2" class="form-label">Faltas cometidas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls2" required>
+                                            <label for="fouls2" class="form-label">
+                                                Faltas cometidas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de faltas cometidas por partido. Típico: 8 - 16"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="fouls2" placeholder="Ej: 11" required>
+                                            <small class="form-text text-muted">Rango típico: 8 - 16 faltas</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="corners2" class="form-label">Promedio de corners</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners2" required>
+                                            <label for="corners2" class="form-label">
+                                                Promedio de corners
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de tiros de esquina por partido. Típico: 3 - 8"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="corners2" placeholder="Ej: 6" required>
+                                            <small class="form-text text-muted">Rango típico: 3 - 8 corners</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="yellowCards2" class="form-label">Tarjetas amarillas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards2" required>
+                                            <label for="yellowCards2" class="form-label">
+                                                Tarjetas amarillas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de tarjetas amarillas por partido. Típico: 1 - 4"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="yellowCards2" placeholder="Ej: 2.1" required>
+                                            <small class="form-text text-muted">Rango típico: 1 - 4 amarillas</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="redCards2" class="form-label">Tarjetas rojas</label>
-                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards2" required>
+                                            <label for="redCards2" class="form-label">
+                                                Tarjetas rojas
+                                                <i class="fas fa-info-circle text-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Promedio de tarjetas rojas por partido. Típico: 0 - 0.3"></i>
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control stats-input" id="redCards2" placeholder="Ej: 0.2" required>
+                                            <small class="form-text text-muted">Rango típico: 0 - 0.3 rojas</small>
                                         </div>
                                     </div>
                                 </div>
@@ -141,9 +216,6 @@
                                 <button type="button" class="btn btn-danger btn-lg ms-2" id="clear-btn">
                                     <i class="fas fa-trash-alt me-2"></i>Limpiar
                                 </button>
-                                <div class="alert alert-info mt-3" role="alert">
-                                    <i class="fas fa-bolt me-2"></i><strong>Tip:</strong> Usa el botón <strong>x2</strong> en la terminal para acelerar los cálculos.
-                                </div>
                             </div>
                         </form>
                     </div>
@@ -239,13 +311,24 @@
                             </div>
 
                             <div class="text-center mt-4">
-                                <button class="btn btn-info btn-lg" id="explanation-btn">
+                                <button class="btn btn-info btn-lg" id="explanation-btn"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Obtén un análisis detallado generado por IA con recomendaciones y factores clave">
                                     <i class="fas fa-robot me-2"></i>Ver Explicación Detallada
                                 </button>
-                                <button class="btn btn-success btn-lg ms-2" id="simular-btn">
+                                <button class="btn btn-success btn-lg ms-2" id="simular-btn"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Simula el partido minuto a minuto con sistema de momentum, fatiga y tácticas. Incluye configuración avanzada opcional">
                                     <i class="fas fa-futbol me-2"></i>Simular Partido
                                 </button>
-                                <button class="btn btn-primary btn-lg ms-2" id="proceso-btn">
+                                <button class="btn btn-danger btn-lg ms-2" id="montecarlo-btn"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Ejecuta 10,000 simulaciones usando distribución de Poisson para analizar probabilidades, marcadores y volatilidad">
+                                    <i class="fas fa-dice me-2"></i>Simulación Monte Carlo
+                                </button>
+                                <button class="btn btn-primary btn-lg ms-2" id="proceso-btn"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="Aprende cómo funcionan los modelos matemáticos (Poisson y Regresión Logística) paso a paso con gráficos y explicaciones">
                                     <i class="fas fa-graduation-cap me-2"></i>Ver Cómo se Calculó
                                 </button>
 
@@ -257,8 +340,10 @@
                                 <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                                     <div class="modal-content">
                                         <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title">Análisis de IA</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-calculator me-2"></i>Cómo se Calculó la Predicción
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
                                             <div class="text-center mb-3">
@@ -274,8 +359,710 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Modal para Monte Carlo -->
+                            <div class="modal fade" id="montecarlo-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
+                                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                    <div class="modal-content montecarlo-modal-content">
+                                        <div class="modal-header montecarlo-header">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-dice me-2"></i>Simulación Monte Carlo
+                                                <span class="badge bg-primary ms-2" id="mc-simulations-badge">10,000 simulaciones</span>
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body montecarlo-body">
+                                            <!-- Loading Animation -->
+                                            <div class="text-center mb-4" id="mc-loading" style="display: none;">
+                                                <div class="montecarlo-loader">
+                                                    <!-- Animación principal -->
+                                                    <div class="loader-dice-container">
+                                                        <div class="loader-dice">
+                                                            <i class="fas fa-dice fa-4x"></i>
+                                                        </div>
+                                                        <div class="loader-particles">
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                            <span class="particle"></span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Contador de simulaciones -->
+                                                    <div class="loader-text mt-4">
+                                                        <h3 class="mb-3">
+                                                            <span id="mc-progress-count">0</span> / 10,000
+                                                        </h3>
+                                                        <h5 class="mb-3" id="mc-status-text">Inicializando simulación...</h5>
+
+                                                        <!-- Barra de progreso -->
+                                                        <div class="progress-container">
+                                                            <div class="progress-bar-custom">
+                                                                <div class="progress-fill" id="mc-progress-bar"></div>
+                                                                <div class="progress-glow"></div>
+                                                            </div>
+                                                            <div class="progress-percentage" id="mc-progress-percentage">0%</div>
+                                                        </div>
+
+                                                        <p class="text-muted mt-3 mb-0">
+                                                            <i class="fas fa-chart-line me-2"></i>
+                                                            Analizando millones de posibilidades estadísticas
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Monte Carlo Results -->
+                                            <div id="mc-results" style="display: none;">
+                                                <!-- BTTS Principal -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-bullseye me-2"></i>Probabilidad BTTS
+                                                    </h4>
+                                                    <div class="mc-btts-main">
+                                                        <div class="mc-btts-value">
+                                                            <span id="mc-btts-prob">0</span><span class="mc-percent">%</span>
+                                                        </div>
+                                                        <div class="mc-confidence-interval">
+                                                            Intervalo de confianza 95%:
+                                                            <span id="mc-btts-ci-lower">0</span>% -
+                                                            <span id="mc-btts-ci-upper">0</span>%
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Escenario Más Probable -->
+                                                <div class="mc-section mc-scenario-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-lightbulb me-2"></i>Escenario Más Probable
+                                                    </h4>
+                                                    <div class="mc-scenario-container">
+                                                        <div class="mc-scenario-verdict" id="mc-scenario-verdict">
+                                                            <!-- Filled by JS -->
+                                                        </div>
+                                                        <div class="mc-scenario-details" id="mc-scenario-details">
+                                                            <!-- Filled by JS -->
+                                                        </div>
+                                                        <div class="mc-scenario-stats">
+                                                            <div class="mc-scenario-stat">
+                                                                <span class="stat-label">Simulaciones con BTTS:</span>
+                                                                <span class="stat-value" id="mc-btts-count">0</span>
+                                                            </div>
+                                                            <div class="mc-scenario-stat">
+                                                                <span class="stat-label">Simulaciones sin BTTS:</span>
+                                                                <span class="stat-value" id="mc-no-btts-count">0</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Resultados del Partido -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-trophy me-2"></i>Probabilidades de Resultado
+                                                    </h4>
+                                                    <div class="mc-results-grid">
+                                                        <div class="mc-result-card">
+                                                            <div class="mc-result-label">Victoria Local</div>
+                                                            <div class="mc-result-value" id="mc-team1-win">0%</div>
+                                                        </div>
+                                                        <div class="mc-result-card">
+                                                            <div class="mc-result-label">Empate</div>
+                                                            <div class="mc-result-value" id="mc-draw">0%</div>
+                                                        </div>
+                                                        <div class="mc-result-card">
+                                                            <div class="mc-result-label">Victoria Visitante</div>
+                                                            <div class="mc-result-value" id="mc-team2-win">0%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Goles Esperados -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-futbol me-2"></i>Goles Esperados
+                                                    </h4>
+                                                    <div class="mc-goals-grid">
+                                                        <div class="mc-goal-card">
+                                                            <div class="mc-goal-team" id="mc-team1-name">Equipo 1</div>
+                                                            <div class="mc-goal-value" id="mc-team1-goals">0.00</div>
+                                                            <div class="mc-goal-std">± <span id="mc-team1-std">0.00</span></div>
+                                                        </div>
+                                                        <div class="mc-goal-vs">VS</div>
+                                                        <div class="mc-goal-card">
+                                                            <div class="mc-goal-team" id="mc-team2-name">Equipo 2</div>
+                                                            <div class="mc-goal-value" id="mc-team2-goals">0.00</div>
+                                                            <div class="mc-goal-std">± <span id="mc-team2-std">0.00</span></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mc-total-goals">
+                                                        Total esperado: <span id="mc-total-goals">0.00</span> goles
+                                                    </div>
+                                                </div>
+
+                                                <!-- Over/Under -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-chart-line me-2"></i>Over/Under 2.5
+                                                    </h4>
+                                                    <div class="mc-over-under-grid">
+                                                        <div class="mc-ou-card">
+                                                            <div class="mc-ou-label">Over 2.5</div>
+                                                            <div class="mc-ou-value" id="mc-over-25">0%</div>
+                                                        </div>
+                                                        <div class="mc-ou-card">
+                                                            <div class="mc-ou-label">Under 2.5</div>
+                                                            <div class="mc-ou-value" id="mc-under-25">0%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Top Marcadores -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-list-ol me-2"></i>Marcadores Más Probables
+                                                    </h4>
+                                                    <div id="mc-top-scorelines" class="mc-scorelines-list">
+                                                        <!-- Filled by JS -->
+                                                    </div>
+                                                </div>
+
+                                                <!-- Distribución de Goles -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-chart-bar me-2"></i>Distribución de Goles Totales
+                                                    </h4>
+                                                    <div id="mc-goals-distribution" class="mc-distribution">
+                                                        <!-- Filled by JS -->
+                                                    </div>
+                                                </div>
+
+                                                <!-- Análisis de Volatilidad -->
+                                                <div class="mc-section">
+                                                    <h4 class="mc-section-title">
+                                                        <i class="fas fa-wave-square me-2"></i>Análisis de Volatilidad
+                                                    </h4>
+                                                    <div class="mc-volatility-card">
+                                                        <div class="mc-volatility-icon" id="mc-vol-icon">✅</div>
+                                                        <div class="mc-volatility-content">
+                                                            <div class="mc-volatility-label" id="mc-vol-label">PREDECIBLE</div>
+                                                            <div class="mc-volatility-desc" id="mc-vol-desc">Resultados consistentes</div>
+                                                            <div class="mc-volatility-stats">
+                                                                Desviación: <span id="mc-vol-std">0.00</span> |
+                                                                Coeficiente: <span id="mc-vol-cv">0.00</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer montecarlo-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuración Pre-Simulación -->
+    <div class="modal fade" id="config-simulacion-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content config-modal-content">
+                <div class="modal-header config-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog me-2"></i>Configuración Avanzada de Simulación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body config-body">
+                    <div class="row">
+                        <!-- EQUIPO 1 -->
+                        <div class="col-md-6">
+                            <div class="team-config-card">
+                                <h4 class="team-config-title">
+                                    <i class="fas fa-home me-2"></i>
+                                    <span id="config-team1-name">Equipo Local</span>
+                                </h4>
+
+                                <!-- Estilo de Juego -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-chess me-2"></i>Estilo de Juego Principal
+                                    </label>
+                                    <select class="form-select config-select" id="estilo-team1">
+                                        <option value="tiki-taka">🎯 Tiki-Taka (Posesión extrema)</option>
+                                        <option value="gegenpressing">⚡ Gegenpressing (Presión alta)</option>
+                                        <option value="catenaccio">🛡️ Catenaccio (Defensa férrea)</option>
+                                        <option value="juego-directo">🎳 Juego Directo</option>
+                                        <option value="total-football">⚽ Total Football (Versátil)</option>
+                                        <option value="contraataque">💨 Contraataque Puro</option>
+                                        <option value="equilibrado" selected>⚖️ Equilibrado</option>
+                                    </select>
+                                    <small class="config-hint" id="estilo-team1-hint">Sin modificadores especiales</small>
+                                </div>
+
+                                <!-- Fortalezas -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-star me-2"></i>Fortalezas (Máximo 2)
+                                    </label>
+                                    <div class="checkboxes-grid" id="fortalezas-team1">
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="jugadas-estrategia">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-flag"></i>
+                                                <span>Jugadas de estrategia</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="delantero-letal">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-crosshairs"></i>
+                                                <span>Delantero letal</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="portero-clase-mundial">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-hands"></i>
+                                                <span>Portero clase mundial</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="defensa-solida">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-shield-alt"></i>
+                                                <span>Defensa sólida</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="mediocampo-creativo">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-magic"></i>
+                                                <span>Mediocampo creativo</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="velocidad-punta">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-bolt"></i>
+                                                <span>Velocidad en punta</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="1" value="fisico-imponente">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-fist-raised"></i>
+                                                <span>Físico imponente</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Debilidades -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Debilidades (1-2)
+                                    </label>
+                                    <div class="checkboxes-grid" id="debilidades-team1">
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="defensa-vulnerable">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-running"></i>
+                                                <span>Vulnerable a contras</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="mal-finalizador">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-times-circle"></i>
+                                                <span>Mal finalizador</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="portero-inseguro">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-dizzy"></i>
+                                                <span>Portero inseguro</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="indisciplina">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-square"></i>
+                                                <span>Indisciplina</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="baja-estamina">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-tired"></i>
+                                                <span>Baja estamina</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="lento-inicio">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-hourglass-start"></i>
+                                                <span>Lento al inicio</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="1" value="panico-presion">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-head-side-cough"></i>
+                                                <span>Pánico bajo presión</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Mentalidad -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-brain me-2"></i>Mentalidad del Partido
+                                    </label>
+                                    <select class="form-select config-select" id="mentalidad-team1">
+                                        <option value="ganar-todo-costa">🔥 Ganar a toda costa</option>
+                                        <option value="buscar-victoria" selected>🎯 Buscar victoria</option>
+                                        <option value="no-perder">🛡️ No perder</option>
+                                        <option value="gestionar">⚙️ Gestionar resultado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EQUIPO 2 -->
+                        <div class="col-md-6">
+                            <div class="team-config-card">
+                                <h4 class="team-config-title">
+                                    <i class="fas fa-plane me-2"></i>
+                                    <span id="config-team2-name">Equipo Visitante</span>
+                                </h4>
+
+                                <!-- Estilo de Juego -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-chess me-2"></i>Estilo de Juego Principal
+                                    </label>
+                                    <select class="form-select config-select" id="estilo-team2">
+                                        <option value="tiki-taka">🎯 Tiki-Taka (Posesión extrema)</option>
+                                        <option value="gegenpressing">⚡ Gegenpressing (Presión alta)</option>
+                                        <option value="catenaccio">🛡️ Catenaccio (Defensa férrea)</option>
+                                        <option value="juego-directo">🎳 Juego Directo</option>
+                                        <option value="total-football">⚽ Total Football (Versátil)</option>
+                                        <option value="contraataque">💨 Contraataque Puro</option>
+                                        <option value="equilibrado" selected>⚖️ Equilibrado</option>
+                                    </select>
+                                    <small class="config-hint" id="estilo-team2-hint">Sin modificadores especiales</small>
+                                </div>
+
+                                <!-- Fortalezas -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-star me-2"></i>Fortalezas (Máximo 2)
+                                    </label>
+                                    <div class="checkboxes-grid" id="fortalezas-team2">
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="jugadas-estrategia">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-flag"></i>
+                                                <span>Jugadas de estrategia</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="delantero-letal">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-crosshairs"></i>
+                                                <span>Delantero letal</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="portero-clase-mundial">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-hands"></i>
+                                                <span>Portero clase mundial</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="defensa-solida">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-shield-alt"></i>
+                                                <span>Defensa sólida</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="mediocampo-creativo">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-magic"></i>
+                                                <span>Mediocampo creativo</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="velocidad-punta">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-bolt"></i>
+                                                <span>Velocidad en punta</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card">
+                                            <input type="checkbox" class="fortaleza-check" data-team="2" value="fisico-imponente">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-fist-raised"></i>
+                                                <span>Físico imponente</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Debilidades -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Debilidades (1-2)
+                                    </label>
+                                    <div class="checkboxes-grid" id="debilidades-team2">
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="defensa-vulnerable">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-running"></i>
+                                                <span>Vulnerable a contras</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="mal-finalizador">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-times-circle"></i>
+                                                <span>Mal finalizador</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="portero-inseguro">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-dizzy"></i>
+                                                <span>Portero inseguro</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="indisciplina">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-square"></i>
+                                                <span>Indisciplina</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="baja-estamina">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-tired"></i>
+                                                <span>Baja estamina</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="lento-inicio">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-hourglass-start"></i>
+                                                <span>Lento al inicio</span>
+                                            </span>
+                                        </label>
+                                        <label class="checkbox-card debilidad-card">
+                                            <input type="checkbox" class="debilidad-check" data-team="2" value="panico-presion">
+                                            <span class="checkbox-content">
+                                                <i class="fas fa-head-side-cough"></i>
+                                                <span>Pánico bajo presión</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Mentalidad -->
+                                <div class="config-section">
+                                    <label class="config-label">
+                                        <i class="fas fa-brain me-2"></i>Mentalidad del Partido
+                                    </label>
+                                    <select class="form-select config-select" id="mentalidad-team2">
+                                        <option value="ganar-todo-costa">🔥 Ganar a toda costa</option>
+                                        <option value="buscar-victoria" selected>🎯 Buscar victoria</option>
+                                        <option value="no-perder">🛡️ No perder</option>
+                                        <option value="gestionar">⚙️ Gestionar resultado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Condiciones del Partido -->
+                    <div class="condiciones-partido mt-4">
+                        <h5 class="text-center mb-3">
+                            <i class="fas fa-cloud-sun me-2"></i>Condiciones del Partido (Opcional)
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="config-label">Clima</label>
+                                <select class="form-select config-select" id="clima">
+                                    <option value="normal" selected>☀️ Soleado</option>
+                                    <option value="lluvia">🌧️ Lluvioso</option>
+                                    <option value="tormenta">⛈️ Tormentoso</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="config-label">Estado del Campo</label>
+                                <select class="form-select config-select" id="campo">
+                                    <option value="perfecto" selected>✅ Perfecto</option>
+                                    <option value="regular">⚠️ Regular</option>
+                                    <option value="malo">❌ Malo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="config-label">Presión</label>
+                                <select class="form-select config-select" id="presion">
+                                    <option value="local">🏠 Favor local</option>
+                                    <option value="neutral" selected>⚖️ Neutral</option>
+                                    <option value="visitante">✈️ Favor visitante</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="config-label">Importancia</label>
+                                <select class="form-select config-select" id="importancia">
+                                    <option value="amistoso">🤝 Amistoso</option>
+                                    <option value="liga" selected>🏆 Liga</option>
+                                    <option value="copa">🏅 Copa</option>
+                                    <option value="final">👑 Final</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer config-footer">
+                    <button type="button" class="btn btn-secondary" id="config-reset-btn">
+                        <i class="fas fa-undo me-2"></i>Restablecer
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" id="config-simular-btn">
+                        <i class="fas fa-play me-2"></i>Simular Partido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Bienvenida - Aparece al iniciar sesión -->
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="background: #1a1a1a; border: 1px solid rgba(0, 160, 227, 0.3); box-shadow: 0 0 30px rgba(0, 160, 227, 0.2);">
+                <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <h3 class="modal-title w-100 text-center" id="welcomeModalLabel" style="color: #00a0e3; font-weight: 700;">
+                        <i class="fas fa-futbol me-2"></i>
+                        ¡Bienvenido a Goal2Goal!
+                        <i class="fas fa-futbol ms-2"></i>
+                    </h3>
+                </div>
+                <div class="modal-body" style="color: #e5e5e5; padding: 2rem;">
+                    <div class="text-center mb-4">
+                        <img src="/static/images/goal2goal.jpeg" alt="Goal2Goal" style="max-width: 150px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);">
+                    </div>
+
+                    <div class="alert alert-info" style="background: rgba(0, 160, 227, 0.15); border: 1px solid rgba(0, 160, 227, 0.4); color: #00d4ff;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Todas las estadísticas que ingreses deben ser el <strong>promedio de los últimos 5 partidos</strong> de cada equipo.
+                    </div>
+
+                    <h5 class="text-center mb-4" style="color: #00a0e3; font-weight: 600;">
+                        📋 Guía Rápida de Uso
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="welcome-step" style="background: #0f0f0f; padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); height: 100%;">
+                                <div class="d-flex align-items-start">
+                                    <div class="step-number" style="background: linear-gradient(135deg, #00a0e3, #0080b8); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; margin-right: 1rem;">1</div>
+                                    <div>
+                                        <h6 style="color: #00a0e3; margin-bottom: 0.5rem; font-weight: 600;">Ingresa los nombres</h6>
+                                        <p style="color: #999; margin: 0; font-size: 0.9rem;">Escribe el nombre de ambos equipos (local y visitante)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="welcome-step" style="background: #0f0f0f; padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); height: 100%;">
+                                <div class="d-flex align-items-start">
+                                    <div class="step-number" style="background: linear-gradient(135deg, #00a0e3, #0080b8); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; margin-right: 1rem;">2</div>
+                                    <div>
+                                        <h6 style="color: #00a0e3; margin-bottom: 0.5rem; font-weight: 600;">Completa las estadísticas</h6>
+                                        <p style="color: #999; margin: 0; font-size: 0.9rem;">9 métricas por equipo (promedio últimos 5 partidos)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="welcome-step" style="background: #0f0f0f; padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); height: 100%;">
+                                <div class="d-flex align-items-start">
+                                    <div class="step-number" style="background: linear-gradient(135deg, #00a0e3, #0080b8); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; margin-right: 1rem;">3</div>
+                                    <div>
+                                        <h6 style="color: #00a0e3; margin-bottom: 0.5rem; font-weight: 600;">Calcula la predicción</h6>
+                                        <p style="color: #999; margin: 0; font-size: 0.9rem;">Obtén probabilidades con Poisson y Regresión Logística</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="welcome-step" style="background: #0f0f0f; padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); height: 100%;">
+                                <div class="d-flex align-items-start">
+                                    <div class="step-number" style="background: linear-gradient(135deg, #00a0e3, #0080b8); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; margin-right: 1rem;">4</div>
+                                    <div>
+                                        <h6 style="color: #00a0e3; margin-bottom: 0.5rem; font-weight: 600;">Explora herramientas</h6>
+                                        <p style="color: #999; margin: 0; font-size: 0.9rem;">IA, Monte Carlo, Simulación de Partido, Cálculos</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3" style="background: rgba(0, 255, 136, 0.1); border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.3);">
+                        <h6 style="color: #00ff88; margin-bottom: 0.75rem;">
+                            <i class="fas fa-chart-line me-2"></i>Estadísticas requeridas (últimos 5 partidos):
+                        </h6>
+                        <div class="row" style="font-size: 0.85rem; color: #00ff88;">
+                            <div class="col-md-6">
+                                <ul class="mb-0" style="list-style: none; padding-left: 0;">
+                                    <li><i class="fas fa-check me-2"></i>Goles anotados promedio</li>
+                                    <li><i class="fas fa-check me-2"></i>Goles recibidos promedio</li>
+                                    <li><i class="fas fa-check me-2"></i>Posesión de balón (%)</li>
+                                    <li><i class="fas fa-check me-2"></i>Tiros a puerta</li>
+                                    <li><i class="fas fa-check me-2"></i>Precisión de pases (%)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="mb-0" style="list-style: none; padding-left: 0;">
+                                    <li><i class="fas fa-check me-2"></i>Faltas cometidas</li>
+                                    <li><i class="fas fa-check me-2"></i>Corners promedio</li>
+                                    <li><i class="fas fa-check me-2"></i>Tarjetas amarillas</li>
+                                    <li><i class="fas fa-check me-2"></i>Tarjetas rojas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <p style="color: #666; font-size: 0.85rem; margin: 0;">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Usa los tooltips (<i class="fas fa-info-circle" style="color: #00a0e3;"></i>) junto a cada campo para obtener ayuda contextual
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1); justify-content: center;">
+                    <button type="button" class="btn btn-lg" style="background: linear-gradient(135deg, #00a0e3, #0080b8); color: white; font-weight: 600; padding: 12px 40px; border-radius: 12px;" data-bs-dismiss="modal">
+                        <i class="fas fa-rocket me-2"></i>¡Entendido, empecemos!
+                    </button>
                 </div>
             </div>
         </div>
@@ -289,6 +1076,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="/static/js/script.js"></script>
     <script src="/static/js/save-prediction.js"></script>
+
+    <!-- Script para mostrar modal de bienvenida al iniciar sesión -->
+    {% if show_welcome_modal %}
+    <script>
+        // Mostrar modal de bienvenida automáticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            welcomeModal.show();
+        });
+    </script>
+    {% endif %}
 
     <!-- Simulador de partido estilo OneFootball -->
     <div id="sim-partido-container" style="display:none; margin-top:32px;">

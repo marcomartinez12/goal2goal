@@ -36,6 +36,12 @@ let isSpeedMode = false; // Modo de velocidad x2
 
 // Evento al cargar el DOM
 document.addEventListener('DOMContentLoaded', function() {
+    // Activar todos los tooltips de Bootstrap
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
     // Referencia al formulario
     const form = document.getElementById('prediction-form');
     const demoButton = document.getElementById('demo-btn');
@@ -59,9 +65,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Limpiar formulario
     clearButton.addEventListener('click', clearFormData);
 
-    // Mostrar explicación de IA
-    explanationBtn.addEventListener('click', showAIExplanation);
-    
+    // Mostrar explicación de IA (solo si existe el botón)
+    if (explanationBtn) {
+        explanationBtn.addEventListener('click', showAIExplanation);
+    }
+
     // Manejador para el botón de velocidad x2
     if (speedToggleBtn) {
         speedToggleBtn.addEventListener('click', function() {
@@ -961,27 +969,16 @@ async function showAIExplanation() {
         }
 
         loadingIndicator.style.display = 'none';
-        explanationDiv.innerHTML = '';
 
-        // Dividir la explicación en párrafos
-        const paragraphs = data.explanation.split('\n\n');
-        
-        // Efecto de escritura para cada párrafo
-        for (const paragraph of paragraphs) {
-            const p = document.createElement('p');
-            explanationDiv.appendChild(p);
-            
-            // Escribir el texto caracter por caracter
-            for (let i = 0; i < paragraph.length; i++) {
-                p.textContent += paragraph[i];
-                explanationDiv.scrollTop = explanationDiv.scrollHeight;
-                // Velocidad más rápida para la explicación
-                await new Promise(resolve => setTimeout(resolve, typingSpeed / 2));
-            }
-            
-            // Pausa entre párrafos
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
+        // Mostrar la explicación HTML directamente (la IA devuelve HTML formateado)
+        explanationDiv.innerHTML = data.explanation;
+
+        // Aplicar estilos adicionales para mejor visualización
+        explanationDiv.style.lineHeight = '1.8';
+        explanationDiv.style.fontSize = '1rem';
+
+        // Scroll al inicio
+        explanationDiv.scrollTop = 0;
 
     } catch (error) {
         loadingIndicator.style.display = 'none';
@@ -1164,9 +1161,12 @@ async function simularPartido() {
         document.head.appendChild(estilosTimeline);
         
         // Agregar evento para nueva simulación
-        document.getElementById('nueva-simulacion-btn').addEventListener('click', function() {
-            simularPartido();
-        });
+        const nuevaSimBtn = document.getElementById('nueva-simulacion-btn');
+        if (nuevaSimBtn) {
+            nuevaSimBtn.addEventListener('click', function() {
+                simularPartido();
+            });
+        }
     }
     
     // Obtener referencias
@@ -1318,20 +1318,329 @@ async function simularPartido() {
 // SIMULACIÓN AVANZADA MINUTO A MINUTO
 // ==========================================
 
+// ==========================================
+// MOTOR DE SIMULACIÓN REALISTA - VERSIÓN PROFESIONAL
+// ==========================================
+
+/**
+ * Clase para gestionar el momentum con memoria de eventos
+ */
+class MomentumEngine {
+    constructor() {
+        this.eventosRecientes = [];
+        this.momentum = 0;
+    }
+
+    agregarEvento(tipo, equipo, impacto, minuto) {
+        this.eventosRecientes.push({
+            tipo,
+            equipo,
+            impacto,
+            minuto
+        });
+
+        // Mantener solo últimos 15 eventos
+        if (this.eventosRecientes.length > 15) {
+            this.eventosRecientes.shift();
+        }
+
+        this.recalcular(minuto);
+    }
+
+    recalcular(minutoActual) {
+        let suma = 0;
+        const totalEventos = this.eventosRecientes.length;
+
+        this.eventosRecientes.forEach((evento, idx) => {
+            // Eventos más recientes pesan más
+            const pesoRecencia = (idx + 1) / totalEventos;
+
+            // Decay temporal: eventos hace más de 10 minutos pesan menos
+            const edadMinutos = minutoActual - evento.minuto;
+            const decayTemporal = Math.max(0.3, Math.exp(-edadMinutos / 10));
+
+            suma += evento.impacto * pesoRecencia * decayTemporal;
+        });
+
+        this.momentum = Math.max(-1, Math.min(1, suma / 3));
+    }
+
+    getMomentum(minuto) {
+        this.recalcular(minuto);
+        return this.momentum;
+    }
+}
+
+/**
+ * Clase para gestionar fatiga de equipos
+ */
+class FatigaManager {
+    constructor() {
+        this.fatigaEquipo1 = 0;
+        this.fatigaEquipo2 = 0;
+    }
+
+    actualizarFatiga(minuto, estilo1, estilo2, expulsiones1, expulsiones2) {
+        const baseFatiga = Math.pow(minuto / 90, 1.5); // Crece exponencialmente
+
+        // Estilos agresivos cansan más
+        const factor1 = (estilo1 === 'PRESIÓN' || estilo1 === 'FÍSICO') ? 1.3 : 1.0;
+        const factor2 = (estilo2 === 'PRESIÓN' || estilo2 === 'FÍSICO') ? 1.3 : 1.0;
+
+        // Con menos jugadores, más fatiga
+        const fatigaExpulsiones1 = 1 + (expulsiones1 * 0.2);
+        const fatigaExpulsiones2 = 1 + (expulsiones2 * 0.2);
+
+        this.fatigaEquipo1 = Math.min(1, baseFatiga * factor1 * fatigaExpulsiones1);
+        this.fatigaEquipo2 = Math.min(1, baseFatiga * factor2 * fatigaExpulsiones2);
+    }
+
+    getFactor(equipo) {
+        const fatiga = equipo === 1 ? this.fatigaEquipo1 : this.fatigaEquipo2;
+
+        return {
+            defensivo: 1 - (fatiga * 0.3), // -30% max defensa
+            ofensivo: 1 + (fatiga * 0.20), // +20% max ataque (más espacios)
+            precision: 1 - (fatiga * 0.15)  // -15% max precisión
+        };
+    }
+}
+
+/**
+ * Obtiene el multiplicador de probabilidad según el minuto
+ */
+function getProbabilidadPorMinuto(minuto) {
+    if (minuto <= 15) return 0.75;   // Inicio táctico
+    if (minuto <= 30) return 1.05;   // Se abre el partido
+    if (minuto <= 45) return 1.35;   // Pre-descanso (más goles estadísticamente)
+    if (minuto <= 50) return 0.65;   // Post-descanso (reajuste)
+    if (minuto <= 60) return 0.95;   // Normalización
+    if (minuto <= 75) return 1.10;   // Aumenta intensidad
+    if (minuto <= 90) return 1.45;   // Minutos finales (más goles)
+    return 1.70;                      // Tiempo añadido (desesperación)
+}
+
+/**
+ * Infiere la táctica de un equipo desde sus estadísticas
+ */
+function inferirTactica(stats) {
+    const posesion = parseFloat(stats.possession) || 50;
+    const tiros = parseFloat(stats.shotsOnTarget) || 4;
+    const pases = parseFloat(stats.passingAccuracy) || 75;
+    const faltas = parseFloat(stats.fouls) || 12;
+
+    if (posesion > 56 && pases > 82) {
+        return {
+            nombre: "POSESIÓN",
+            defensivo: 0.88,
+            ofensivo: 1.12,
+            contraataques: 0.55,
+            descripcion: "Dominio de balón"
+        };
+    } else if (posesion < 44 && tiros > 4.5) {
+        return {
+            nombre: "CONTRAATAQUE",
+            defensivo: 1.05,
+            ofensivo: 0.92,
+            contraataques: 1.85,
+            descripcion: "Juego directo"
+        };
+    } else if (faltas > 14) {
+        return {
+            nombre: "FÍSICO/PRESIÓN",
+            defensivo: 1.08,
+            ofensivo: 0.95,
+            contraataques: 1.25,
+            descripcion: "Alta intensidad"
+        };
+    } else if (posesion > 50 && tiros < 4) {
+        return {
+            nombre: "CONTROL",
+            defensivo: 0.95,
+            ofensivo: 0.98,
+            contraataques: 0.80,
+            descripcion: "Juego conservador"
+        };
+    } else {
+        return {
+            nombre: "EQUILIBRADO",
+            defensivo: 1.0,
+            ofensivo: 1.0,
+            contraataques: 1.0,
+            descripcion: "Juego balanceado"
+        };
+    }
+}
+
+/**
+ * Calcula xG (Expected Goals) para una ocasión
+ */
+function calcularXG(tipoJugada, calidadOfensiva, calidadDefensiva, fatiga) {
+    let xgBase = 0;
+
+    // xG base según tipo de jugada (basado en datos reales)
+    switch(tipoJugada) {
+        case 'penalti':         xgBase = 0.79; break;
+        case 'uno_vs_uno':      xgBase = 0.38; break;
+        case 'dentro_area':     xgBase = 0.19; break;
+        case 'borde_area':      xgBase = 0.08; break;
+        case 'fuera_area':      xgBase = 0.04; break;
+        case 'corner':          xgBase = 0.03; break;
+        case 'tiro_libre':      xgBase = 0.06; break;
+        case 'contragolpe':     xgBase = 0.24; break;
+        case 'rechace':         xgBase = 0.12; break;
+        case 'cabezazo':        xgBase = 0.09; break;
+        default:                xgBase = 0.10; break;
+    }
+
+    // Ajustar por calidad ofensiva (0.5 - 2.0)
+    const factorOfensivo = calidadOfensiva / 5.0;
+
+    // Ajustar por calidad defensiva (0.5 - 1.5)
+    const factorDefensivo = Math.max(0.5, 1.5 - (calidadDefensiva / 5.0));
+
+    // Ajustar por fatiga (precisión baja)
+    const factorFatiga = fatiga.precision;
+
+    // NUEVO: Factor de variabilidad realista (±30%)
+    // Simula "días inspirados" o "días malos" - hace resultados menos predecibles
+    const variabilidadRealista = 0.7 + Math.random() * 0.6; // 0.7 a 1.3
+
+    // xG final con variabilidad
+    let xgFinal = xgBase * factorOfensivo * factorDefensivo * factorFatiga * variabilidadRealista;
+
+    // Clamp entre 0.01 y 0.95 (aumentado de 0.92 para permitir más goles)
+    return Math.max(0.01, Math.min(0.95, xgFinal));
+}
+
+/**
+ * Calcula la presión ofensiva de un equipo en un momento dado
+ */
+function calcularPresionOfensiva(lambda, stats, minuto, diferencia, momentum, tactica, fatiga) {
+    let presion = lambda * 2.2;
+
+    // Factor estadístico ofensivo
+    const factorTiros = Math.max(0.6, Math.min(2.0, stats.shotsOnTarget / 4.5));
+    const factorPosesion = stats.possession / 50;
+    presion *= (factorTiros * 0.6 + factorPosesion * 0.4);
+
+    // Ajuste por diferencia de goles (MÁS AGRESIVO para permitir goleadas y remontadas)
+    if (diferencia < -2) {
+        presion *= 1.85; // Perdiendo por 3+: desesperación total (permite remontadas locas)
+    } else if (diferencia < -1) {
+        presion *= 1.65; // Perdiendo por 2: ataque total
+    } else if (diferencia < 0) {
+        presion *= 1.35; // Perdiendo por 1: presionar más
+    } else if (diferencia > 2) {
+        presion *= 0.55; // Ganando por 3+: ultra conservador (pero permite goleadas)
+    } else if (diferencia > 1) {
+        presion *= 0.70; // Ganando por 2+: conservador
+    } else if (diferencia > 0) {
+        presion *= 0.82; // Ganando por 1: algo conservador
+    }
+
+    // Ajuste por momentum (MÁS IMPACTO para rachas goleadoras)
+    presion *= (1 + momentum * 0.45);
+
+    // Ajuste por táctica
+    presion *= tactica.ofensivo;
+
+    // Ajuste por fatiga (más espacios = más ocasiones)
+    presion *= fatiga.ofensivo;
+
+    // NUEVO: Factor de rendimiento del día (±25%)
+    // Simula "días inspirados" donde un equipo puede golear
+    const rendimientoDia = 0.75 + Math.random() * 0.5; // 0.75 a 1.25
+    presion *= rendimientoDia;
+
+    // Minutos críticos (MÁS AGRESIVO)
+    if (minuto > 75 && diferencia < 0) {
+        const factorDesesperacion = 1 + ((minuto - 75) / 15) * 0.8;
+        presion *= factorDesesperacion;
+    }
+
+    // Minutos clave (justo antes de descanso/final)
+    if ([44, 45, 89, 90].includes(minuto)) {
+        presion *= 1.25;
+    }
+
+    return Math.max(0.1, presion);
+}
+
+/**
+ * Genera una ocasión de gol con tipo específico
+ */
+function generarTipoOcasion(presion, tactica, esContraataque) {
+    const rand = Math.random();
+
+    if (esContraataque) {
+        return Math.random() < 0.7 ? 'contragolpe' : 'uno_vs_uno';
+    }
+
+    // Distribución realista de tipos de ocasión
+    if (rand < 0.02) return 'penalti';
+    if (rand < 0.15) return 'uno_vs_uno';
+    if (rand < 0.35) return 'dentro_area';
+    if (rand < 0.50) return 'borde_area';
+    if (rand < 0.65) return 'fuera_area';
+    if (rand < 0.75) return 'corner';
+    if (rand < 0.82) return 'tiro_libre';
+    if (rand < 0.90) return 'rechace';
+    return 'cabezazo';
+}
+
+/**
+ * Simulación de partido ULTRA REALISTA
+ *
+ * MEJORAS DE REALISMO (v2.0):
+ * - Variabilidad en xG (±30%): Simula "días inspirados" vs "días malos"
+ * - Factor de rendimiento (±25%): Permite goleadas inesperadas
+ * - Mayor agresividad en diferencias grandes: Posibilita remontadas épicas y goleadas
+ * - Probabilidad de ocasión aumentada: Más goles, resultados más variados
+ * - Momentum amplificado: Rachas goleadoras más realistas
+ *
+ * Resultados posibles: 0-0, 1-0, 4-3, 5-1, etc. (como en fútbol real)
+ */
 function simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2) {
-    // Estado inicial del partido
+    // Inicialización
     let goles1 = 0;
     let goles2 = 0;
     let momentos = [];
     let jugadores1Expulsados = 0;
     let jugadores2Expulsados = 0;
 
-    // Ajuste dinámico de lambdas según el estado del partido
-    let lambda1Actual = lambda1;
-    let lambda2Actual = lambda2;
+    // Motores avanzados
+    const momentumEngine = new MomentumEngine();
+    const fatigaManager = new FatigaManager();
 
-    // Momentum (inercia del partido) - influye en las probabilidades
-    let momentum = 0; // -1 favorece team2, +1 favorece team1
+    // Tácticas inferidas
+    let tactica1 = inferirTactica(stats1);
+    let tactica2 = inferirTactica(stats2);
+
+    // Aplicar modificadores de configuración a las tácticas si existe configuración
+    if (configuracionSimulacion) {
+        const modTeam1 = aplicarModificadoresConfiguracion(
+            configuracionSimulacion.team1, 0, 0, 0, '', 1, 0, tactica1
+        );
+        const modTeam2 = aplicarModificadoresConfiguracion(
+            configuracionSimulacion.team2, 0, 0, 0, '', 1, 0, tactica2
+        );
+
+        // Aplicar modificadores a las tácticas
+        tactica1.defensivo *= modTeam1.defensivo;
+        tactica1.ofensivo *= modTeam1.ofensivo;
+        tactica1.contraataques *= modTeam1.contraataques;
+
+        tactica2.defensivo *= modTeam2.defensivo;
+        tactica2.ofensivo *= modTeam2.ofensivo;
+        tactica2.contraataques *= modTeam2.contraataques;
+    }
+
+    // Calidad ofensiva/defensiva
+    const calidadOfensiva1 = (parseFloat(stats1.shotsOnTarget) + parseFloat(stats1.goalsScored)) / 2;
+    const calidadOfensiva2 = (parseFloat(stats2.shotsOnTarget) + parseFloat(stats2.goalsScored)) / 2;
+    const calidadDefensiva1 = 5 - parseFloat(stats1.goalsConceded);
+    const calidadDefensiva2 = 5 - parseFloat(stats2.goalsConceded);
 
     // Estadísticas acumuladas del partido
     let tirosLocal = 0;
@@ -1345,182 +1654,220 @@ function simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2) 
     let tarjetasAmarillasLocal = 0;
     let tarjetasAmarillasVisitante = 0;
 
+    // xG acumulado
+    let xgTotal1 = 0;
+    let xgTotal2 = 0;
+
     // Simulación minuto a minuto (90 minutos + descuento)
     const minutosTotal = 90 + Math.floor(Math.random() * 6); // 90-95 minutos
 
+    // Log inicial de tácticas
+    momentos.push({
+        minuto: 0,
+        equipo: 'INFO',
+        descripcion: `${team1} (${tactica1.nombre}: ${tactica1.descripcion}) vs ${team2} (${tactica2.nombre}: ${tactica2.descripcion})`,
+        tipo: 'info'
+    });
+
     for (let minuto = 1; minuto <= minutosTotal; minuto++) {
-        // Ajustar lambdas según el estado del partido
         const diferencia = goles1 - goles2;
 
-        // Si un equipo va ganando, tiende a jugar más defensivo
-        if (diferencia > 0) {
-            lambda1Actual = lambda1 * 0.85; // Equipo 1 se defiende un poco
-            lambda2Actual = lambda2 * 1.2;  // Equipo 2 ataca más
-            momentum -= 0.1;
-        } else if (diferencia < 0) {
-            lambda1Actual = lambda1 * 1.2;  // Equipo 1 ataca más
-            lambda2Actual = lambda2 * 0.85; // Equipo 2 se defiende un poco
-            momentum += 0.1;
-        } else {
-            // Partido igualado, lambdas normales
-            lambda1Actual = lambda1;
-            lambda2Actual = lambda2;
+        // Actualizar fatiga
+        fatigaManager.actualizarFatiga(minuto, tactica1.nombre, tactica2.nombre,
+                                       jugadores1Expulsados, jugadores2Expulsados);
+
+        const fatiga1 = fatigaManager.getFactor(1);
+        const fatiga2 = fatigaManager.getFactor(2);
+
+        // Obtener momentum actual
+        const momentum = momentumEngine.getMomentum(minuto);
+
+        // Multiplicador temporal
+        const factorTemporal = getProbabilidadPorMinuto(minuto);
+
+        // Calcular presión ofensiva de ambos equipos
+        let presion1 = calcularPresionOfensiva(lambda1, stats1, minuto, diferencia,
+                                                  momentum, tactica1, fatiga1);
+        let presion2 = calcularPresionOfensiva(lambda2, stats2, minuto, -diferencia,
+                                                  -momentum, tactica2, fatiga2);
+
+        // Aplicar modificadores de configuración a la presión
+        if (configuracionSimulacion) {
+            const modTeam1 = aplicarModificadoresConfiguracion(
+                configuracionSimulacion.team1, presion1, 0, 0, '', minuto, diferencia, tactica1
+            );
+            const modTeam2 = aplicarModificadoresConfiguracion(
+                configuracionSimulacion.team2, presion2, 0, 0, '', minuto, -diferencia, tactica2
+            );
+
+            presion1 *= modTeam1.presion;
+            presion2 *= modTeam2.presion;
         }
 
-        // Efecto de expulsiones
-        if (jugadores1Expulsados > 0) {
-            lambda1Actual *= (1 - jugadores1Expulsados * 0.25); // -25% por cada expulsado
-            lambda2Actual *= (1 + jugadores1Expulsados * 0.15); // +15% al rival
+        // Presión total en este minuto
+        const presionTotal = (presion1 + presion2) * factorTemporal;
+
+        // Probabilidad de ocasión en este minuto (aumentado de 0.35 a 0.42 para más ocasiones)
+        const probOcasion = Math.min(0.42, presionTotal / 170);
+
+        if (Math.random() < probOcasion) {
+            // Determinar qué equipo genera la ocasión
+            const esEquipo1 = Math.random() < (presion1 / (presion1 + presion2));
+
+            if (esEquipo1) {
+                // OCASIÓN EQUIPO 1
+                const esContraataque = tactica1.nombre === 'CONTRAATAQUE' && Math.random() < tactica1.contraataques / 2;
+                const tipoOcasion = generarTipoOcasion(presion1, tactica1, esContraataque);
+                let xg = calcularXG(tipoOcasion, calidadOfensiva1, calidadDefensiva2, fatiga1);
+
+                // Aplicar modificadores de configuración al xG
+                if (configuracionSimulacion) {
+                    const modTeam1 = aplicarModificadoresConfiguracion(
+                        configuracionSimulacion.team1, presion1, xg, fatiga1, tipoOcasion, minuto, diferencia, tactica1
+                    );
+                    xg *= modTeam1.xg;
+                }
+
+                xgTotal1 += xg;
+                tirosLocal++;
+
+                // ¿Convierte en gol?
+                if (Math.random() < xg) {
+                    // ¡GOL!
+                    goles1++;
+                    tirosPuertaLocal++;
+                    momentumEngine.agregarEvento('gol', 1, 0.6, minuto);
+
+                    const descripcionGol = generarDescripcionGolRealista(tipoOcasion, team1);
+                    momentos.push({
+                        minuto,
+                        equipo: team1,
+                        descripcion: descripcionGol,
+                        tipo: 'gol',
+                        xg: xg.toFixed(2)
+                    });
+                } else if (xg > 0.20) {
+                    // Ocasión clara fallada
+                    tirosPuertaLocal++;
+                    momentumEngine.agregarEvento('ocasion', 1, 0.15, minuto);
+
+                    if (Math.random() < 0.4) {
+                        momentos.push({
+                            minuto,
+                            equipo: team1,
+                            descripcion: generarDescripcionOcasionFallada(tipoOcasion),
+                            tipo: 'ocasion'
+                        });
+                    }
+                }
+            } else {
+                // OCASIÓN EQUIPO 2
+                const esContraataque = tactica2.nombre === 'CONTRAATAQUE' && Math.random() < tactica2.contraataques / 2;
+                const tipoOcasion = generarTipoOcasion(presion2, tactica2, esContraataque);
+                let xg = calcularXG(tipoOcasion, calidadOfensiva2, calidadDefensiva1, fatiga2);
+
+                // Aplicar modificadores de configuración al xG
+                if (configuracionSimulacion) {
+                    const modTeam2 = aplicarModificadoresConfiguracion(
+                        configuracionSimulacion.team2, presion2, xg, fatiga2, tipoOcasion, minuto, -diferencia, tactica2
+                    );
+                    xg *= modTeam2.xg;
+                }
+
+                xgTotal2 += xg;
+                tirosVisitante++;
+
+                // ¿Convierte en gol?
+                if (Math.random() < xg) {
+                    // ¡GOL!
+                    goles2++;
+                    tirosPuertaVisitante++;
+                    momentumEngine.agregarEvento('gol', 2, -0.6, minuto);
+
+                    const descripcionGol = generarDescripcionGolRealista(tipoOcasion, team2);
+                    momentos.push({
+                        minuto,
+                        equipo: team2,
+                        descripcion: descripcionGol,
+                        tipo: 'gol',
+                        xg: xg.toFixed(2)
+                    });
+                } else if (xg > 0.20) {
+                    // Ocasión clara fallada
+                    tirosPuertaVisitante++;
+                    momentumEngine.agregarEvento('ocasion', 2, -0.15, minuto);
+
+                    if (Math.random() < 0.4) {
+                        momentos.push({
+                            minuto,
+                            equipo: team2,
+                            descripcion: generarDescripcionOcasionFallada(tipoOcasion),
+                            tipo: 'ocasion'
+                        });
+                    }
+                }
+            }
         }
-        if (jugadores2Expulsados > 0) {
-            lambda2Actual *= (1 - jugadores2Expulsados * 0.25);
-            lambda1Actual *= (1 + jugadores2Expulsados * 0.15);
-        }
 
-        // Fatiga en minutos finales (más goles en últimos 15 minutos)
-        if (minuto > 75) {
-            lambda1Actual *= 1.15;
-            lambda2Actual *= 1.15;
-        }
-
-        // Probabilidad de gol por minuto (lambda / 90)
-        const probGol1PorMinuto = Math.min(lambda1Actual / 90, 0.08); // Máximo 8% por minuto
-        const probGol2PorMinuto = Math.min(lambda2Actual / 90, 0.08);
-
-        // Aplicar momentum
-        const probGol1Ajustada = Math.max(0, probGol1PorMinuto * (1 + momentum * 0.3));
-        const probGol2Ajustada = Math.max(0, probGol2PorMinuto * (1 - momentum * 0.3));
-
-        // Determinar si hay gol en este minuto
-        const rand = Math.random();
-
-        if (rand < probGol1Ajustada) {
-            // ¡GOL DEL EQUIPO 1!
-            goles1++;
-            tirosPuertaLocal++;
-            tirosLocal++;
-            momentum = Math.min(1, momentum + 0.3);
-
-            momentos.push({
-                minuto,
-                equipo: team1,
-                descripcion: generarDescripcionGol(),
-                tipo: 'gol'
-            });
-        } else if (rand < probGol1Ajustada + probGol2Ajustada) {
-            // ¡GOL DEL EQUIPO 2!
-            goles2++;
-            tirosPuertaVisitante++;
-            tirosVisitante++;
-            momentum = Math.max(-1, momentum - 0.3);
-
-            momentos.push({
-                minuto,
-                equipo: team2,
-                descripcion: generarDescripcionGol(),
-                tipo: 'gol'
-            });
-        }
-
-        // Eventos adicionales en cada minuto (tiros, faltas, córners, tarjetas)
-        const probEvento = 0.15; // 15% de evento por minuto
-
-        if (Math.random() < probEvento) {
+        // Eventos menores (corners, faltas, tarjetas)
+        if (Math.random() < 0.12) {
             const tipoEvento = Math.random();
-            const equipoEvento = Math.random() < (0.5 + momentum * 0.2) ? team1 : team2;
+            const equipoEvento = Math.random() < 0.5 ? team1 : team2;
             const esLocal = equipoEvento === team1;
 
-            if (tipoEvento < 0.35) {
-                // Tiro a puerta
-                if (esLocal) {
-                    tirosLocal++;
-                    tirosPuertaLocal++;
-                } else {
-                    tirosVisitante++;
-                    tirosPuertaVisitante++;
-                }
-
-                if (Math.random() < 0.3) { // 30% de tiros notables se registran
-                    momentos.push({
-                        minuto,
-                        equipo: equipoEvento,
-                        descripcion: generarDescripcionTiro(),
-                        tipo: 'tiro'
-                    });
-                }
-            } else if (tipoEvento < 0.55) {
-                // Tiro fuera
-                if (esLocal) tirosLocal++;
-                else tirosVisitante++;
-            } else if (tipoEvento < 0.70) {
-                // Córner
+            if (tipoEvento < 0.45) {
+                // Corner
                 if (esLocal) cornersLocal++;
                 else cornersVisitante++;
-
-                if (Math.random() < 0.25) {
-                    momentos.push({
-                        minuto,
-                        equipo: equipoEvento,
-                        descripcion: 'Córner a favor',
-                        tipo: 'corner'
-                    });
-                }
-            } else if (tipoEvento < 0.90) {
+            } else if (tipoEvento < 0.85) {
                 // Falta
                 if (esLocal) faltasLocal++;
                 else faltasVisitante++;
-
-                if (Math.random() < 0.20) {
-                    momentos.push({
-                        minuto,
-                        equipo: equipoEvento,
-                        descripcion: generarDescripcionFalta(),
-                        tipo: 'falta'
-                    });
-                }
             } else if (tipoEvento < 0.97) {
                 // Tarjeta amarilla
                 if (esLocal) tarjetasAmarillasLocal++;
                 else tarjetasAmarillasVisitante++;
 
-                momentos.push({
-                    minuto,
-                    equipo: equipoEvento,
-                    descripcion: 'Tarjeta amarilla por juego brusco',
-                    tipo: 'tarjeta'
-                });
+                if (Math.random() < 0.25) {
+                    momentos.push({
+                        minuto,
+                        equipo: equipoEvento,
+                        descripcion: 'Tarjeta amarilla por falta',
+                        tipo: 'tarjeta'
+                    });
+                }
             } else {
-                // Tarjeta roja (muy raro, 3% de los eventos)
+                // Tarjeta roja (muy raro)
                 if (esLocal) {
                     jugadores1Expulsados++;
+                    momentumEngine.agregarEvento('expulsion', 1, -0.8, minuto);
                     momentos.push({
                         minuto,
                         equipo: team1,
-                        descripcion: '🔴 TARJETA ROJA - Expulsión',
+                        descripcion: '🔴 EXPULSIÓN - Juego peligroso',
                         tipo: 'tarjeta-roja'
                     });
                 } else {
                     jugadores2Expulsados++;
+                    momentumEngine.agregarEvento('expulsion', 2, 0.8, minuto);
                     momentos.push({
                         minuto,
                         equipo: team2,
-                        descripcion: '🔴 TARJETA ROJA - Expulsión',
+                        descripcion: '🔴 EXPULSIÓN - Juego peligroso',
                         tipo: 'tarjeta-roja'
                     });
                 }
             }
         }
-
-        // Decay del momentum (se va disipando)
-        momentum *= 0.98;
     }
 
-    // Calcular posesión basada en estadísticas originales + momentum
+    // Calcular posesión basada en estadísticas originales + momentum final
+    const momentumFinal = momentumEngine.getMomentum(minutosTotal);
     const posesionBase1 = parseFloat(stats1.possession) || 50;
     const posesionBase2 = parseFloat(stats2.possession) || 50;
     const totalPosesion = posesionBase1 + posesionBase2;
 
-    let posesionLocal = Math.round((posesionBase1 / totalPosesion) * 100 + momentum * 5);
+    let posesionLocal = Math.round((posesionBase1 / totalPosesion) * 100 + momentumFinal * 5);
     posesionLocal = Math.max(30, Math.min(70, posesionLocal));
     const posesionVisitante = 100 - posesionLocal;
 
@@ -1576,6 +1923,11 @@ function simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2) 
             nombre: "Tarjetas rojas",
             local: jugadores1Expulsados,
             visitante: jugadores2Expulsados
+        },
+        xG: {
+            nombre: "xG (Expected Goals)",
+            local: xgTotal1.toFixed(2),
+            visitante: xgTotal2.toFixed(2)
         }
     };
 
@@ -1583,7 +1935,9 @@ function simularPartidoAvanzado(team1, team2, lambda1, lambda2, stats1, stats2) 
         goles1,
         goles2,
         momentos,
-        estadisticas
+        estadisticas,
+        xgTotal1: xgTotal1.toFixed(2),
+        xgTotal2: xgTotal2.toFixed(2)
     };
 }
 
@@ -1823,7 +2177,133 @@ function generarMinutosAleatorios(cantidad) {
     return minutos;
 }
 
-// Funciones para generar descripciones aleatorias
+// ==========================================
+// FUNCIONES GENERADORAS DE DESCRIPCIONES REALISTAS
+// ==========================================
+
+/**
+ * Genera descripción de gol según el tipo de jugada
+ */
+function generarDescripcionGolRealista(tipoJugada, equipo) {
+    const descripciones = {
+        'penalti': [
+            '⚽ ¡GOL DE PENALTI! Conversión impecable desde los 11 metros',
+            '⚽ ¡GOL! Penalti ejecutado con frialdad',
+            '⚽ ¡GOL! Penalti colocado imposible para el portero'
+        ],
+        'uno_vs_uno': [
+            '⚽ ¡GOLAZO! Define con clase en el mano a mano',
+            '⚽ ¡GOL! Supera al portero con una vaselina magistral',
+            '⚽ ¡GOL! Definición perfecta tras quedar solo ante el portero'
+        ],
+        'dentro_area': [
+            '⚽ ¡GOL! Remate dentro del área que no perdona',
+            '⚽ ¡GOL! Disparo cruzado que se cuela en la red',
+            '⚽ ¡GOL! Remate a bocajarro imparable'
+        ],
+        'borde_area': [
+            '⚽ ¡GOL! Disparo desde el borde del área que bate al portero',
+            '⚽ ¡GOL! Remate desde la frontal colocado a la escuadra',
+            '⚽ ¡GOL! Tiro potente desde fuera del área'
+        ],
+        'fuera_area': [
+            '⚽ ¡GOLAZO! Cañonazo desde fuera del área',
+            '⚽ ¡GOL! Disparo lejano que sorprende al guardameta',
+            '⚽ ¡GOL! Bombazo desde 25 metros'
+        ],
+        'corner': [
+            '⚽ ¡GOL! Cabezazo tras el saque de esquina',
+            '⚽ ¡GOL! Corner aprovechado al primer toque',
+            '⚽ ¡GOL! Remate tras el córner que se cuela'
+        ],
+        'tiro_libre': [
+            '⚽ ¡GOL DE FALTA! Tiro libre directo magistral',
+            '⚽ ¡GOLAZO! Falta directa por toda la escuadra',
+            '⚽ ¡GOL! Tiro libre perfecto que supera la barrera'
+        ],
+        'contragolpe': [
+            '⚽ ¡GOL! Contraataque letal que termina en gol',
+            '⚽ ¡GOL! Contragolpe fulminante',
+            '⚽ ¡GOL! Robo y contra que finaliza en la red'
+        ],
+        'rechace': [
+            '⚽ ¡GOL! Aprovecha el rechace y no falla',
+            '⚽ ¡GOL! Remate tras el rebote del portero',
+            '⚽ ¡GOL! Balón suelto en el área que empuja a la red'
+        ],
+        'cabezazo': [
+            '⚽ ¡GOL! Cabezazo imparable tras el centro',
+            '⚽ ¡GOL! Remate de cabeza perfecto',
+            '⚽ ¡GOL! Cabeceazo en el segundo palo'
+        ]
+    };
+
+    const opciones = descripciones[tipoJugada] || descripciones['dentro_area'];
+    return opciones[Math.floor(Math.random() * opciones.length)];
+}
+
+/**
+ * Genera descripción de ocasión fallada
+ */
+function generarDescripcionOcasionFallada(tipoJugada) {
+    const descripciones = {
+        'penalti': [
+            '❌ ¡PENALTI FALLADO! El portero adivina la dirección',
+            '❌ Penalti desperdiciado, se va fuera',
+            '❌ ¡AL PALO! El penalti se estrella en el poste'
+        ],
+        'uno_vs_uno': [
+            '💨 ¡OCASIÓN CLARÍSIMA! El portero salva con una gran parada',
+            '💨 Mano a mano desperdiciado, tiro desviado',
+            '💨 ¡QUÉ FALLO! Solo ante el portero y la envía fuera'
+        ],
+        'dentro_area': [
+            '💨 Ocasión clara en el área que se marcha desviada',
+            '💨 Remate a bocajarro que despeja el portero',
+            '💨 ¡AL PALO! El balón se estrella en el poste'
+        ],
+        'borde_area': [
+            '💨 Disparo desde la frontal que se va alto',
+            '💨 Tiro potente que detiene el portero',
+            '💨 Remate desde el borde que sale desviado'
+        ],
+        'fuera_area': [
+            '💨 Disparo lejano que se va por encima',
+            '💨 Cañonazo desde fuera que atrapa el portero',
+            '💨 Tiro de larga distancia que sale desviado'
+        ],
+        'corner': [
+            '💨 Corner peligroso que despeja la defensa',
+            '💨 Remate de cabeza tras corner que se va fuera',
+            '💨 Corner que nadie logra rematar'
+        ],
+        'tiro_libre': [
+            '💨 Falta directa que atrapa el portero',
+            '💨 Tiro libre que se va por encima de la barrera',
+            '💨 Falta peligrosa que despeja el guardameta'
+        ],
+        'contragolpe': [
+            '💨 Contraataque que no finalizan correctamente',
+            '💨 Contra que frena la defensa in extremis',
+            '💨 Contragolpe desperdiciado con mal pase final'
+        ],
+        'rechace': [
+            '💨 Rechace en el área que no logran aprovechar',
+            '💨 Balón suelto que despeja la defensa',
+            '💨 Rebote que rematan fuera'
+        ],
+        'cabezazo': [
+            '💨 Cabezazo que se va por encima',
+            '💨 Remate de cabeza que atrapa el portero',
+            '💨 Cabeceo que sale desviado'
+        ]
+    };
+
+    const opciones = descripciones[tipoJugada] || descripciones['dentro_area'];
+    return opciones[Math.floor(Math.random() * opciones.length)];
+}
+
+// Funciones para generar descripciones aleatorias (legacy - mantener para compatibilidad)
 function generarDescripcionGol() {
     const descripciones = [
         `¡GOL! Remate potente desde fuera del área que bate al portero`,
@@ -2351,3 +2831,642 @@ function normalizarDatos(datos) {
     };
 }
 
+// ==========================================
+// MONTE CARLO SIMULATION
+// ==========================================
+
+/**
+ * Ejecuta simulación Monte Carlo y muestra resultados
+ */
+async function runMonteCarloSimulation() {
+    const modal = new bootstrap.Modal(document.getElementById('montecarlo-modal'));
+    modal.show();
+
+    // Mostrar loading y resetear valores
+    document.getElementById('mc-loading').style.display = 'block';
+    document.getElementById('mc-results').style.display = 'none';
+
+    // Resetear contador y barra de progreso
+    document.getElementById('mc-progress-count').textContent = '0';
+    document.getElementById('mc-progress-bar').style.width = '0%';
+    document.getElementById('mc-progress-percentage').textContent = '0%';
+    document.getElementById('mc-status-text').textContent = 'Inicializando simulación...';
+
+    // Animar contador de simulaciones
+    animateSimulationCount();
+
+    try {
+        // Obtener datos de los equipos del formulario
+        const team1Data = {
+            name: document.getElementById('team1').value,
+            goalsScored: parseFloat(document.getElementById('goalsScored1').value),
+            goalsConceded: parseFloat(document.getElementById('goalsConceded1').value),
+            possession: parseFloat(document.getElementById('possession1').value),
+            shotsOnTarget: parseFloat(document.getElementById('shotsOnTarget1').value),
+            passingAccuracy: parseFloat(document.getElementById('passingAccuracy1').value),
+            fouls: parseFloat(document.getElementById('fouls1').value),
+            corners: parseFloat(document.getElementById('corners1').value),
+            yellowCards: parseFloat(document.getElementById('yellowCards1').value),
+            redCards: parseFloat(document.getElementById('redCards1').value)
+        };
+
+        const team2Data = {
+            name: document.getElementById('team2').value,
+            goalsScored: parseFloat(document.getElementById('goalsScored2').value),
+            goalsConceded: parseFloat(document.getElementById('goalsConceded2').value),
+            possession: parseFloat(document.getElementById('possession2').value),
+            shotsOnTarget: parseFloat(document.getElementById('shotsOnTarget2').value),
+            passingAccuracy: parseFloat(document.getElementById('passingAccuracy2').value),
+            fouls: parseFloat(document.getElementById('fouls2').value),
+            corners: parseFloat(document.getElementById('corners2').value),
+            yellowCards: parseFloat(document.getElementById('yellowCards2').value),
+            redCards: parseFloat(document.getElementById('redCards2').value)
+        };
+
+        // Llamar al backend y esperar respuesta
+        const responsePromise = fetch('/monte_carlo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                team1: team1Data,
+                team2: team2Data,
+                simulations: 10000
+            })
+        });
+
+        // Esperar mínimo 3.5 segundos para que se vean las animaciones
+        const minDelay = new Promise(resolve => setTimeout(resolve, 3500));
+
+        // Esperar ambos: la respuesta del servidor Y el delay mínimo
+        const [response] = await Promise.all([responsePromise, minDelay]);
+        const data = await response.json();
+
+        if (data.success) {
+            // Ocultar loading
+            document.getElementById('mc-loading').style.display = 'none';
+            document.getElementById('mc-results').style.display = 'block';
+
+            // Poblar resultados
+            populateMonteCarloResults(data, team1Data.name, team2Data.name);
+        } else {
+            throw new Error(data.error || 'Error en la simulación');
+        }
+
+    } catch (error) {
+        console.error('Error en Monte Carlo:', error);
+        document.getElementById('mc-loading').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al ejecutar la simulación: ${error.message}
+            </div>
+        `;
+    }
+}
+
+/**
+ * Anima el contador de simulaciones durante la carga con barra de progreso
+ */
+function animateSimulationCount() {
+    let count = 0;
+    const target = 10000;
+    const duration = 3500; // 3.5 segundos para dar tiempo a ver la animación
+    const steps = 100;
+    const increment = target / steps;
+    const interval = duration / steps;
+
+    // Mensajes de estado que van cambiando
+    const statusMessages = [
+        'Inicializando simulación...',
+        'Generando distribuciones de Poisson...',
+        'Calculando lambdas de goles...',
+        'Ejecutando simulaciones...',
+        'Analizando marcadores...',
+        'Calculando probabilidades BTTS...',
+        'Procesando resultados...',
+        'Finalizando análisis...'
+    ];
+
+    let messageIndex = 0;
+    const messageInterval = duration / statusMessages.length;
+
+    // Actualizar mensaje de estado
+    const messageTimer = setInterval(() => {
+        if (messageIndex < statusMessages.length) {
+            document.getElementById('mc-status-text').textContent = statusMessages[messageIndex];
+            messageIndex++;
+        }
+    }, messageInterval);
+
+    // Animación de contador y barra de progreso
+    const counter = setInterval(() => {
+        count += increment;
+        if (count >= target) {
+            count = target;
+            clearInterval(counter);
+            clearInterval(messageTimer);
+            document.getElementById('mc-status-text').textContent = '¡Simulación completada!';
+        }
+
+        // Actualizar contador con formato de miles
+        const displayCount = Math.floor(count).toLocaleString('es-ES');
+        document.getElementById('mc-progress-count').textContent = displayCount;
+
+        // Actualizar barra de progreso
+        const percentage = (count / target) * 100;
+        document.getElementById('mc-progress-bar').style.width = percentage + '%';
+        document.getElementById('mc-progress-percentage').textContent = Math.floor(percentage) + '%';
+    }, interval);
+}
+
+/**
+ * Genera el contenido del escenario más probable
+ */
+function populateScenarioMasProbable(data, bttsProb, team1Name, team2Name) {
+    const verdictDiv = document.getElementById('mc-scenario-verdict');
+    const detailsDiv = document.getElementById('mc-scenario-details');
+
+    // Calcular número de simulaciones con BTTS
+    const totalSimulations = data.simulations || 10000;
+    const bttsCount = Math.round((bttsProb / 100) * totalSimulations);
+    const noBttsCount = totalSimulations - bttsCount;
+
+    // Actualizar contadores
+    document.getElementById('mc-btts-count').textContent = bttsCount.toLocaleString('es-ES');
+    document.getElementById('mc-no-btts-count').textContent = noBttsCount.toLocaleString('es-ES');
+
+    // Determinar veredicto
+    const isBttsMoreLikely = bttsProb >= 50;
+    const confidence = isBttsMoreLikely ? bttsProb : (100 - bttsProb);
+
+    // Generar veredicto visual
+    if (isBttsMoreLikely) {
+        verdictDiv.innerHTML = `
+            <div class="scenario-verdict-icon">✅</div>
+            <div class="scenario-verdict-title btts-yes">
+                AMBOS EQUIPOS MARCARÁN
+            </div>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">
+                Probabilidad: ${bttsProb.toFixed(2)}%
+            </p>
+        `;
+    } else {
+        verdictDiv.innerHTML = `
+            <div class="scenario-verdict-icon">❌</div>
+            <div class="scenario-verdict-title btts-no">
+                AL MENOS UN EQUIPO NO MARCARÁ
+            </div>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">
+                Probabilidad: ${(100 - bttsProb).toFixed(2)}%
+            </p>
+        `;
+    }
+
+    // Generar detalles del escenario
+    const topScoreline = data.top_scorelines[0];
+    const expectedGoalsT1 = data.goals.team1_avg;
+    const expectedGoalsT2 = data.goals.team2_avg;
+    const totalExpectedGoals = data.goals.total_avg;
+
+    // Determinar tendencia de resultado
+    let resultTendency = '';
+    if (data.results.team1_win > data.results.team2_win && data.results.team1_win > data.results.draw) {
+        resultTendency = `victoria de <span class="scenario-detail-highlight">${team1Name}</span>`;
+    } else if (data.results.team2_win > data.results.team1_win && data.results.team2_win > data.results.draw) {
+        resultTendency = `victoria de <span class="scenario-detail-highlight">${team2Name}</span>`;
+    } else if (data.results.draw > data.results.team1_win && data.results.draw > data.results.team2_win) {
+        resultTendency = `<span class="scenario-detail-highlight">empate</span>`;
+    } else {
+        resultTendency = 'resultado muy ajustado';
+    }
+
+    // Generar explicación detallada
+    let explanation = '';
+
+    if (isBttsMoreLikely) {
+        explanation = `
+            <p class="scenario-detail-text">
+                📊 De las <span class="scenario-detail-highlight">${totalSimulations.toLocaleString('es-ES')}</span> simulaciones realizadas,
+                <span class="scenario-detail-highlight">${bttsCount.toLocaleString('es-ES')}</span> mostraron que ambos equipos anotan al menos un gol.
+            </p>
+            <p class="scenario-detail-text">
+                ⚽ El marcador más probable es <span class="scenario-detail-highlight">${topScoreline.score}</span>
+                con una probabilidad del <span class="scenario-detail-highlight">${topScoreline.probability.toFixed(2)}%</span>.
+            </p>
+            <p class="scenario-detail-text">
+                📈 Se espera un total de <span class="scenario-detail-highlight">${totalExpectedGoals.toFixed(2)}</span> goles
+                (${team1Name}: ${expectedGoalsT1.toFixed(2)}, ${team2Name}: ${expectedGoalsT2.toFixed(2)}).
+            </p>
+            <p class="scenario-detail-text">
+                🏆 La tendencia apunta hacia ${resultTendency}.
+            </p>
+        `;
+    } else {
+        const zeroZeroProb = data.top_scorelines.find(s => s.score === '0-0')?.probability || 0;
+        const oneTeamScores = 100 - bttsProb;
+
+        explanation = `
+            <p class="scenario-detail-text">
+                📊 De las <span class="scenario-detail-highlight">${totalSimulations.toLocaleString('es-ES')}</span> simulaciones realizadas,
+                <span class="scenario-detail-highlight">${noBttsCount.toLocaleString('es-ES')}</span> mostraron que al menos un equipo NO anota.
+            </p>
+            <p class="scenario-detail-text">
+                ⚽ El marcador más probable es <span class="scenario-detail-highlight">${topScoreline.score}</span>
+                con una probabilidad del <span class="scenario-detail-highlight">${topScoreline.probability.toFixed(2)}%</span>.
+            </p>
+            <p class="scenario-detail-text">
+                📈 Se espera un total de <span class="scenario-detail-highlight">${totalExpectedGoals.toFixed(2)}</span> goles,
+                indicando un partido ${totalExpectedGoals < 2 ? 'cerrado' : 'con pocos goles para uno de los equipos'}.
+            </p>
+            <p class="scenario-detail-text">
+                🏆 La tendencia apunta hacia ${resultTendency}.
+            </p>
+        `;
+    }
+
+    detailsDiv.innerHTML = explanation;
+}
+
+/**
+ * Puebla los resultados de Monte Carlo en el modal
+ */
+function populateMonteCarloResults(data, team1Name, team2Name) {
+    // BTTS
+    const bttsProb = data.btts.probability;
+    document.getElementById('mc-btts-prob').textContent = bttsProb.toFixed(2);
+    document.getElementById('mc-btts-ci-lower').textContent = data.btts.confidence_interval.lower.toFixed(2);
+    document.getElementById('mc-btts-ci-upper').textContent = data.btts.confidence_interval.upper.toFixed(2);
+
+    // Calcular escenario más probable
+    populateScenarioMasProbable(data, bttsProb, team1Name, team2Name);
+
+    // Resultados
+    document.getElementById('mc-team1-win').textContent = data.results.team1_win.toFixed(2) + '%';
+    document.getElementById('mc-draw').textContent = data.results.draw.toFixed(2) + '%';
+    document.getElementById('mc-team2-win').textContent = data.results.team2_win.toFixed(2) + '%';
+
+    // Goles esperados
+    document.getElementById('mc-team1-name').textContent = team1Name;
+    document.getElementById('mc-team2-name').textContent = team2Name;
+    document.getElementById('mc-team1-goals').textContent = data.goals.team1_avg.toFixed(2);
+    document.getElementById('mc-team1-std').textContent = data.goals.team1_std.toFixed(2);
+    document.getElementById('mc-team2-goals').textContent = data.goals.team2_avg.toFixed(2);
+    document.getElementById('mc-team2-std').textContent = data.goals.team2_std.toFixed(2);
+    document.getElementById('mc-total-goals').textContent = data.goals.total_avg.toFixed(2);
+
+    // Over/Under
+    document.getElementById('mc-over-25').textContent = data.over_under.over_2_5.toFixed(2) + '%';
+    document.getElementById('mc-under-25').textContent = data.over_under.under_2_5.toFixed(2) + '%';
+
+    // Top marcadores
+    const scoresContainer = document.getElementById('mc-top-scorelines');
+    scoresContainer.innerHTML = '';
+    data.top_scorelines.forEach((scoreline, index) => {
+        const scoreItem = document.createElement('div');
+        scoreItem.className = 'mc-scoreline-item';
+        scoreItem.innerHTML = `
+            <span class="mc-scoreline-rank">#${index + 1}</span>
+            <span class="mc-scoreline-score">${scoreline.score}</span>
+            <div class="mc-scoreline-bar">
+                <div class="mc-scoreline-bar-fill" style="width: ${scoreline.probability}%"></div>
+            </div>
+            <span class="mc-scoreline-prob">${scoreline.probability.toFixed(2)}%</span>
+        `;
+        scoresContainer.appendChild(scoreItem);
+    });
+
+    // Distribución de goles
+    const distContainer = document.getElementById('mc-goals-distribution');
+    distContainer.innerHTML = '';
+    const maxProb = Math.max(...data.total_goals_distribution.map(d => d.probability));
+    data.total_goals_distribution.forEach(dist => {
+        const distItem = document.createElement('div');
+        distItem.className = 'mc-dist-item';
+        const barWidth = (dist.probability / maxProb) * 100;
+        distItem.innerHTML = `
+            <span class="mc-dist-label">${dist.goals} goles</span>
+            <div class="mc-dist-bar">
+                <div class="mc-dist-bar-fill" style="width: ${barWidth}%"></div>
+            </div>
+            <span class="mc-dist-prob">${dist.probability.toFixed(2)}%</span>
+        `;
+        distContainer.appendChild(distItem);
+    });
+
+    // Volatilidad
+    document.getElementById('mc-vol-icon').textContent = data.volatility.icon;
+    document.getElementById('mc-vol-label').textContent = data.volatility.label;
+    document.getElementById('mc-vol-desc').textContent = data.volatility.description;
+    document.getElementById('mc-vol-std').textContent = data.volatility.value.toFixed(2);
+    document.getElementById('mc-vol-cv').textContent = data.volatility.coefficient.toFixed(2);
+}
+
+// Event listener para el botón de Monte Carlo
+document.addEventListener('DOMContentLoaded', function() {
+    const mcButton = document.getElementById('montecarlo-btn');
+    if (mcButton) {
+        mcButton.addEventListener('click', runMonteCarloSimulation);
+    }
+});
+
+/* ============================================
+   SISTEMA DE CONFIGURACIÓN DE SIMULACIÓN
+   ============================================ */
+
+// Variable global para almacenar la configuración
+let configuracionSimulacion = null;
+
+// Función para validar selecciones de fortalezas (máximo 2)
+function validarFortalezas(teamId) {
+    const checkboxes = document.querySelectorAll(`#fortalezas-team${teamId} input[type="checkbox"]:checked`);
+    if (checkboxes.length > 2) {
+        // Desmarcar el último seleccionado
+        checkboxes[checkboxes.length - 1].checked = false;
+        mostrarAlertaConfig('Máximo 2 fortalezas por equipo', 'warning');
+    }
+}
+
+// Función para validar selecciones de debilidades (1-2)
+function validarDebilidades(teamId) {
+    const checkboxes = document.querySelectorAll(`#debilidades-team${teamId} input[type="checkbox"]:checked`);
+    if (checkboxes.length > 2) {
+        // Desmarcar el último seleccionado
+        checkboxes[checkboxes.length - 1].checked = false;
+        mostrarAlertaConfig('Máximo 2 debilidades por equipo', 'warning');
+    }
+}
+
+// Función para mostrar alertas en el modal de configuración
+function mostrarAlertaConfig(mensaje, tipo = 'info') {
+    const alertHTML = `
+        <div class="alert alert-${tipo} alert-dismissible fade show" role="alert" style="margin-bottom: 1rem;">
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const modalBody = document.querySelector('#config-simulacion-modal .modal-body');
+    const existingAlert = modalBody.querySelector('.alert');
+    if (existingAlert) existingAlert.remove();
+    modalBody.insertAdjacentHTML('afterbegin', alertHTML);
+    setTimeout(() => {
+        const alert = modalBody.querySelector('.alert');
+        if (alert) alert.remove();
+    }, 3000);
+}
+
+// Función para recolectar la configuración del formulario
+function recolectarConfiguracion() {
+    // Validar que haya al menos una debilidad por equipo
+    const debilidades1 = document.querySelectorAll('#debilidades-team1 input[type="checkbox"]:checked');
+    const debilidades2 = document.querySelectorAll('#debilidades-team2 input[type="checkbox"]:checked');
+
+    if (debilidades1.length === 0 || debilidades2.length === 0) {
+        mostrarAlertaConfig('Cada equipo debe tener al menos 1 debilidad', 'danger');
+        return null;
+    }
+
+    const config = {
+        team1: {
+            estilo: document.getElementById('estilo-team1').value,
+            fortalezas: Array.from(document.querySelectorAll('#fortalezas-team1 input[type="checkbox"]:checked'))
+                .map(cb => cb.value),
+            debilidades: Array.from(debilidades1).map(cb => cb.value),
+            mentalidad: document.getElementById('mentalidad-team1').value
+        },
+        team2: {
+            estilo: document.getElementById('estilo-team2').value,
+            fortalezas: Array.from(document.querySelectorAll('#fortalezas-team2 input[type="checkbox"]:checked'))
+                .map(cb => cb.value),
+            debilidades: Array.from(debilidades2).map(cb => cb.value),
+            mentalidad: document.getElementById('mentalidad-team2').value
+        },
+        condiciones: {
+            clima: document.getElementById('clima').value,
+            campo: document.getElementById('campo').value,
+            presion: document.getElementById('presion').value,
+            importancia: document.getElementById('importancia').value
+        }
+    };
+
+    return config;
+}
+
+// Función para resetear el formulario de configuración
+function resetearConfiguracion() {
+    // Resetear estilos de juego
+    document.getElementById('estilo-team1').selectedIndex = 0;
+    document.getElementById('estilo-team2').selectedIndex = 0;
+
+    // Resetear mentalidad
+    document.getElementById('mentalidad-team1').selectedIndex = 0;
+    document.getElementById('mentalidad-team2').selectedIndex = 0;
+
+    // Desmarcar todas las fortalezas y debilidades
+    document.querySelectorAll('#fortalezas-team1 input[type="checkbox"], #debilidades-team1 input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#fortalezas-team2 input[type="checkbox"], #debilidades-team2 input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+    // Resetear condiciones del partido
+    document.getElementById('clima').selectedIndex = 0;
+    document.getElementById('campo').selectedIndex = 0;
+    document.getElementById('presion').selectedIndex = 0;
+    document.getElementById('importancia').selectedIndex = 0;
+}
+
+// Función para aplicar modificadores basados en la configuración
+function aplicarModificadoresConfiguracion(config, presion, xg, fatiga, tipoJugada, minuto, diferencia, tactica) {
+    let modificadores = {
+        presion: 1.0,
+        xg: 1.0,
+        fatiga: 1.0,
+        posesion: 1.0,
+        contraataques: 1.0,
+        defensivo: 1.0,
+        ofensivo: 1.0
+    };
+
+    // ========== ESTILO DE JUEGO ==========
+    const estiloModificadores = {
+        'tiki-taka': { posesion: 1.30, contraataques: 0.50, ofensivo: 1.15, fatiga: 0.95 },
+        'gegenpressing': { presion: 1.35, fatiga: 1.30, ofensivo: 1.25, xg: 1.10 },
+        'catenaccio': { defensivo: 1.40, contraataques: 1.30, posesion: 0.70, ofensivo: 0.75 },
+        'juego-directo': { contraataques: 1.40, xg: 0.90, presion: 1.15, posesion: 0.85 },
+        'total-football': { ofensivo: 1.20, presion: 1.20, posesion: 1.15, fatiga: 1.20 },
+        'contraataque': { contraataques: 1.50, defensivo: 1.25, presion: 0.70, posesion: 0.75 },
+        'equilibrado': { /* Sin modificadores especiales */ }
+    };
+
+    if (estiloModificadores[config.estilo]) {
+        Object.assign(modificadores, estiloModificadores[config.estilo]);
+    }
+
+    // ========== FORTALEZAS ==========
+    config.fortalezas.forEach(fortaleza => {
+        switch(fortaleza) {
+            case 'jugadas-estrategia':
+                if (['corner', 'tiro_libre', 'penalti'].includes(tipoJugada)) {
+                    modificadores.xg *= 1.35;
+                }
+                break;
+            case 'delantero-letal':
+                if (['dentro_area', 'uno_vs_uno', 'cabezazo'].includes(tipoJugada)) {
+                    modificadores.xg *= 1.30;
+                }
+                break;
+            case 'portero-clase-mundial':
+                modificadores.defensivo *= 1.35;
+                break;
+            case 'defensa-solida':
+                modificadores.defensivo *= 1.25;
+                if (tipoJugada === 'contragolpe') modificadores.xg *= 0.70;
+                break;
+            case 'mediocampo-creativo':
+                modificadores.posesion *= 1.20;
+                modificadores.presion *= 1.15;
+                break;
+            case 'velocidad-punta':
+                if (tipoJugada === 'contragolpe') modificadores.xg *= 1.40;
+                modificadores.contraataques *= 1.30;
+                break;
+            case 'fisico-imponente':
+                modificadores.fatiga *= 0.80;
+                if (tipoJugada === 'cabezazo') modificadores.xg *= 1.25;
+                break;
+        }
+    });
+
+    // ========== DEBILIDADES ==========
+    config.debilidades.forEach(debilidad => {
+        switch(debilidad) {
+            case 'defensa-vulnerable':
+                if (tipoJugada === 'contragolpe') modificadores.xg *= 1.35;
+                modificadores.defensivo *= 0.75;
+                break;
+            case 'mal-finalizador':
+                if (['dentro_area', 'borde_area', 'fuera_area'].includes(tipoJugada)) {
+                    modificadores.xg *= 0.70;
+                }
+                break;
+            case 'portero-inseguro':
+                modificadores.xg *= 1.25;
+                modificadores.defensivo *= 0.80;
+                break;
+            case 'indisciplina':
+                // Más probabilidad de expulsiones (se maneja en la simulación principal)
+                if (minuto > 70) modificadores.presion *= 0.85;
+                break;
+            case 'baja-estamina':
+                if (minuto > 60) {
+                    modificadores.fatiga *= 1.40;
+                    modificadores.presion *= 0.80;
+                }
+                break;
+            case 'lento-inicio':
+                if (minuto <= 20) {
+                    modificadores.presion *= 0.70;
+                    modificadores.xg *= 0.85;
+                }
+                break;
+            case 'panico-presion':
+                if (diferencia < -1) {
+                    modificadores.xg *= 0.75;
+                    modificadores.presion *= 0.85;
+                }
+                break;
+        }
+    });
+
+    // ========== MENTALIDAD ==========
+    switch(config.mentalidad) {
+        case 'ganar-todo-costa':
+            modificadores.presion *= 1.30;
+            modificadores.ofensivo *= 1.25;
+            modificadores.defensivo *= 0.80;
+            modificadores.fatiga *= 1.15;
+            break;
+        case 'buscar-victoria':
+            modificadores.presion *= 1.15;
+            modificadores.ofensivo *= 1.10;
+            break;
+        case 'no-perder':
+            modificadores.defensivo *= 1.20;
+            modificadores.presion *= 0.85;
+            modificadores.contraataques *= 1.15;
+            break;
+        case 'gestionar-resultado':
+            if (diferencia > 0) {
+                modificadores.defensivo *= 1.25;
+                modificadores.presion *= 0.75;
+            }
+            break;
+    }
+
+    return modificadores;
+}
+
+// Función principal para mostrar el modal de configuración antes de simular
+function mostrarModalConfiguracion() {
+    const modal = new bootstrap.Modal(document.getElementById('config-simulacion-modal'));
+    modal.show();
+}
+
+// Event listeners para el modal de configuración
+document.addEventListener('DOMContentLoaded', function() {
+    // Botón de resetear configuración
+    const resetBtn = document.getElementById('config-reset-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetearConfiguracion);
+    }
+
+    // Botón de iniciar simulación con configuración
+    const simularConfigBtn = document.getElementById('config-simular-btn');
+    if (simularConfigBtn) {
+        simularConfigBtn.addEventListener('click', function() {
+            const config = recolectarConfiguracion();
+            if (config) {
+                configuracionSimulacion = config;
+                const modal = bootstrap.Modal.getInstance(document.getElementById('config-simulacion-modal'));
+                modal.hide();
+
+                // Ejecutar la simulación del partido con la configuración
+                simularPartido();
+            }
+        });
+    }
+
+    // Validación de fortalezas - Team 1
+    const fortalezasTeam1 = document.querySelectorAll('#fortalezas-team1 input[type="checkbox"]');
+    fortalezasTeam1.forEach(cb => {
+        cb.addEventListener('change', () => validarFortalezas(1));
+    });
+
+    // Validación de fortalezas - Team 2
+    const fortalezasTeam2 = document.querySelectorAll('#fortalezas-team2 input[type="checkbox"]');
+    fortalezasTeam2.forEach(cb => {
+        cb.addEventListener('change', () => validarFortalezas(2));
+    });
+
+    // Validación de debilidades - Team 1
+    const debilidadesTeam1 = document.querySelectorAll('#debilidades-team1 input[type="checkbox"]');
+    debilidadesTeam1.forEach(cb => {
+        cb.addEventListener('change', () => validarDebilidades(1));
+    });
+
+    // Validación de debilidades - Team 2
+    const debilidadesTeam2 = document.querySelectorAll('#debilidades-team2 input[type="checkbox"]');
+    debilidadesTeam2.forEach(cb => {
+        cb.addEventListener('change', () => validarDebilidades(2));
+    });
+
+    // Interceptar el botón "Simular Partido" para mostrar primero el modal de configuración
+    const simularBtn = document.getElementById('simular-btn');
+    if (simularBtn) {
+        // Remover listeners existentes y añadir el nuevo
+        const newSimularBtn = simularBtn.cloneNode(true);
+        simularBtn.parentNode.replaceChild(newSimularBtn, simularBtn);
+
+        newSimularBtn.addEventListener('click', function() {
+            mostrarModalConfiguracion();
+        });
+    }
+});

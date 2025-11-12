@@ -67,7 +67,9 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    # Verificar si debe mostrar el modal de bienvenida
+    show_welcome = session.pop('show_welcome_modal', False)
+    return render_template('index.html', show_welcome_modal=show_welcome)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -144,6 +146,9 @@ def login():
             login_user(user, remember=False)  # remember=False hace que la sesión expire al cerrar el navegador
             user.last_login = db.func.now()
             db.session.commit()
+
+            # Marcar que el usuario acaba de iniciar sesión para mostrar el modal de bienvenida
+            session['show_welcome_modal'] = True
 
             app.logger.info(f"Usuario {username} inició sesión")
             return jsonify({
@@ -248,19 +253,29 @@ PREDICCIÓN FINAL:
 - Modelo recomendado: {recommended_model}
 - Nivel de confianza: {confidence}
 
-Por favor, proporciona una explicación detallada que incluya:
+Por favor, proporciona una explicación detallada en formato HTML que incluya:
 
-1. **Análisis Ofensivo**: Evalúa la capacidad goleadora de ambos equipos basándote en sus estadísticas ofensivas (goles anotados, tiros a puerta, precisión de pases).
+Porque esas estasdisticas son necesarias para predecir BTTS y luego los siguientes puntos:
 
-2. **Análisis Defensivo**: Analiza las vulnerabilidades defensivas de cada equipo (goles recibidos). ¿Son defensas porosas que facilitan que el rival anote?
+1. **Cómo se Calculó la Predicción**:
+   - Explica paso a paso cómo funcionan los modelos matemáticos utilizados (Poisson Bivariado y Regresión Logística)
+   - Describe cómo se calcula el Lambda (tasa de goles esperados) usando la fórmula: (goles_anotados_equipo × goles_recibidos_rival) / promedio_liga
+   - Explica cómo el modelo de Poisson usa la distribución de probabilidad para calcular P(≥1 gol) = 1 - P(0 goles) = 1 - e^(-lambda)
+   - Menciona que la Simulación Monte Carlo ejecuta 10,000 simulaciones aleatorias del partido usando la distribución de Poisson para obtener intervalos de confianza más robustos
 
-3. **Por qué los modelos predicen esto**: Explica cómo el modelo de Poisson Bivariado y la Regresión Logística llegan a estas conclusiones.
+2. **Análisis Ofensivo**: Evalúa la capacidad goleadora de ambos equipos basándote en sus estadísticas ofensivas (goles anotados, tiros a puerta, precisión de pases).
+
+3. **Análisis Defensivo**: Analiza las vulnerabilidades defensivas de cada equipo (goles recibidos). ¿Son defensas porosas que facilitan que el rival anote?
 
 4. **Factores clave**: ¿Qué estadísticas específicas son más determinantes para predecir BTTS en este partido?
 
 5. **Recomendación final**: Basándote en el análisis, ¿qué tan probable es realmente que ambos equipos marquen? ¿Hay concordancia entre los modelos?
 
-Usa un tono profesional pero amigable, como si estuvieras explicando en un programa deportivo. Sé conciso pero informativo.
+FORMATO DE RESPUESTA:
+- Usa HTML para dar formato (etiquetas <h3>, <p>, <strong>, <em>, <ul>, <li>)
+- Usa iconos de emojis para hacer la explicación más visual
+- Incluye secciones claramente separadas con encabezados
+- Sé conciso pero informativo, usa un tono profesional pero amigable
 """
 
         headers = {
@@ -284,11 +299,11 @@ Usa un tono profesional pero amigable, como si estuvieras explicando en un progr
                 payload = {
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "Eres un analista deportivo experto especializado en predicciones BTTS (Both Teams To Score - Ambos Marcan). Proporcionas explicaciones detalladas basadas en modelos estadísticos como Poisson Bivariado y Regresión Logística."},
+                        {"role": "system", "content": "Eres un analista deportivo experto especializado en predicciones BTTS (Both Teams To Score - Ambos Marcan). Proporcionas explicaciones detalladas en formato HTML sobre cómo funcionan los modelos estadísticos: Poisson Bivariado, Regresión Logística y Simulación Monte Carlo. Explicas los conceptos matemáticos de forma clara y accesible."},
                         {"role": "user", "content": prompt}
                     ],
                     "temperature": 0.7,
-                    "max_tokens": 1200
+                    "max_tokens": 2000
                 }
 
                 app.logger.info(f"Enviando solicitud a OpenRouter con modelo {model}")
@@ -490,6 +505,9 @@ def get_historical():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+
 @app.route('/como-funciona', methods=['POST'])
 def como_funciona():
     """
@@ -522,6 +540,216 @@ def proceso_calculo():
         return redirect(url_for('index'))
 
     return render_template('proceso_calculo.html', data=calculation_data)
+
+
+@app.route('/monte_carlo', methods=['POST'])
+@login_required
+def monte_carlo_simulation():
+    """
+    Ejecuta simulación Monte Carlo para predicción BTTS
+    """
+    try:
+        data = request.get_json()
+
+        # Extraer datos de los equipos
+        team1 = data.get('team1', {})
+        team2 = data.get('team2', {})
+        n_simulations = data.get('simulations', 10000)
+
+        app.logger.info(f"Iniciando simulación Monte Carlo con {n_simulations} iteraciones")
+
+        # Calcular lambdas (tasa esperada de goles) basado en estadísticas
+        # Lambda = (Goles anotados del equipo * Goles concedidos del rival) / Promedio de liga
+        league_avg_goals = 1.5  # Promedio típico de goles por equipo
+
+        lambda_team1 = (team1['goalsScored'] * team2['goalsConceded']) / league_avg_goals
+        lambda_team2 = (team2['goalsScored'] * team1['goalsConceded']) / league_avg_goals
+
+        # Ajustar lambdas con otros factores (posesión, tiros a puerta)
+        possession_factor_t1 = team1['possession'] / 50  # Normalizado a 50%
+        possession_factor_t2 = team2['possession'] / 50
+
+        shots_factor_t1 = team1['shotsOnTarget'] / 5  # Normalizado a 5 tiros
+        shots_factor_t2 = team2['shotsOnTarget'] / 5
+
+        lambda_team1 *= (possession_factor_t1 * 0.3 + shots_factor_t1 * 0.7)
+        lambda_team2 *= (possession_factor_t2 * 0.3 + shots_factor_t2 * 0.7)
+
+        # Asegurar valores mínimos razonables
+        lambda_team1 = max(0.5, min(4.0, lambda_team1))
+        lambda_team2 = max(0.5, min(4.0, lambda_team2))
+
+        # SIMULACIÓN MONTE CARLO
+        results = {
+            'team1_goals': [],
+            'team2_goals': [],
+            'btts': 0,
+            'scorelines': {},
+            'total_goals_dist': {},
+            'team1_scores': 0,
+            'team2_scores': 0,
+            'over_2_5': 0,
+            'under_2_5': 0
+        }
+
+        np.random.seed(int(time.time()))
+
+        for _ in range(n_simulations):
+            # Generar goles usando distribución de Poisson
+            goals_t1 = np.random.poisson(lambda_team1)
+            goals_t2 = np.random.poisson(lambda_team2)
+
+            results['team1_goals'].append(goals_t1)
+            results['team2_goals'].append(goals_t2)
+
+            # Contar BTTS
+            if goals_t1 > 0 and goals_t2 > 0:
+                results['btts'] += 1
+
+            # Contar marcadores
+            scoreline = f"{goals_t1}-{goals_t2}"
+            results['scorelines'][scoreline] = results['scorelines'].get(scoreline, 0) + 1
+
+            # Distribución de goles totales
+            total_goals = goals_t1 + goals_t2
+            results['total_goals_dist'][total_goals] = results['total_goals_dist'].get(total_goals, 0) + 1
+
+            # Ganadores
+            if goals_t1 > goals_t2:
+                results['team1_scores'] += 1
+            elif goals_t2 > goals_t1:
+                results['team2_scores'] += 1
+
+            # Over/Under 2.5
+            if total_goals > 2.5:
+                results['over_2_5'] += 1
+            else:
+                results['under_2_5'] += 1
+
+        # Calcular probabilidades
+        btts_probability = (results['btts'] / n_simulations) * 100
+        team1_win_prob = (results['team1_scores'] / n_simulations) * 100
+        team2_win_prob = (results['team2_scores'] / n_simulations) * 100
+        draw_prob = ((n_simulations - results['team1_scores'] - results['team2_scores']) / n_simulations) * 100
+        over_2_5_prob = (results['over_2_5'] / n_simulations) * 100
+        under_2_5_prob = (results['under_2_5'] / n_simulations) * 100
+
+        # Top 10 marcadores más probables
+        top_scorelines = sorted(results['scorelines'].items(), key=lambda x: x[1], reverse=True)[:10]
+        top_scorelines_formatted = [
+            {
+                'score': score,
+                'probability': (count / n_simulations) * 100,
+                'count': count
+            }
+            for score, count in top_scorelines
+        ]
+
+        # Distribución de goles totales
+        total_goals_formatted = [
+            {
+                'goals': goals,
+                'probability': (count / n_simulations) * 100,
+                'count': count
+            }
+            for goals, count in sorted(results['total_goals_dist'].items())
+        ]
+
+        # Estadísticas de goles
+        avg_goals_t1 = np.mean(results['team1_goals'])
+        avg_goals_t2 = np.mean(results['team2_goals'])
+        std_goals_t1 = np.std(results['team1_goals'])
+        std_goals_t2 = np.std(results['team2_goals'])
+        avg_total_goals = avg_goals_t1 + avg_goals_t2
+
+        # Intervalos de confianza (95%)
+        btts_std = np.sqrt(btts_probability * (100 - btts_probability) / n_simulations)
+        btts_ci_lower = max(0, btts_probability - 1.96 * btts_std)
+        btts_ci_upper = min(100, btts_probability + 1.96 * btts_std)
+
+        # Análisis de volatilidad
+        total_goals_all = [t1 + t2 for t1, t2 in zip(results['team1_goals'], results['team2_goals'])]
+        volatility = np.std(total_goals_all)
+        cv = volatility / avg_total_goals if avg_total_goals > 0 else 0
+
+        if cv < 0.5:
+            volatility_label = "PREDECIBLE"
+            volatility_icon = "✅"
+            volatility_desc = "Resultados consistentes entre simulaciones"
+        elif cv < 0.8:
+            volatility_label = "MODERADO"
+            volatility_icon = "⚠️"
+            volatility_desc = "Variabilidad media en resultados"
+        else:
+            volatility_label = "IMPREDECIBLE"
+            volatility_icon = "🔥"
+            volatility_desc = "Alta variabilidad en resultados"
+
+        # Respuesta compatible con ambas estructuras (página principal y proceso_calculo)
+        response = {
+            'success': True,
+            'simulations': n_simulations,
+            'lambda_team1': round(lambda_team1, 2),
+            'lambda_team2': round(lambda_team2, 2),
+
+            # Estructura para página principal
+            'btts': {
+                'probability': round(btts_probability, 2),
+                'count': results['btts'],
+                'confidence_interval': {
+                    'lower': round(btts_ci_lower, 2),
+                    'upper': round(btts_ci_upper, 2)
+                }
+            },
+            'results': {
+                'team1_win': round(team1_win_prob, 2),
+                'team2_win': round(team2_win_prob, 2),
+                'draw': round(draw_prob, 2)
+            },
+            'goals': {
+                'team1_avg': round(avg_goals_t1, 2),
+                'team2_avg': round(avg_goals_t2, 2),
+                'team1_std': round(std_goals_t1, 2),
+                'team2_std': round(std_goals_t2, 2),
+                'total_avg': round(avg_total_goals, 2)
+            },
+            'over_under': {
+                'over_2_5': round(over_2_5_prob, 2),
+                'under_2_5': round(under_2_5_prob, 2)
+            },
+            'top_scorelines': top_scorelines_formatted,
+            'total_goals_distribution': total_goals_formatted,
+            'volatility': {
+                'value': round(volatility, 2),
+                'coefficient': round(cv, 2),
+                'label': volatility_label,
+                'icon': volatility_icon,
+                'description': volatility_desc
+            },
+
+            # Estructura alternativa plana (para proceso_calculo.html)
+            'btts_probability': round(btts_probability, 2),
+            'confidence_interval': [round(btts_ci_lower, 2), round(btts_ci_upper, 2)],
+            'team1_win_probability': round(team1_win_prob, 2),
+            'team2_win_probability': round(team2_win_prob, 2),
+            'draw_probability': round(draw_prob, 2),
+            'expected_goals_team1': round(avg_goals_t1, 2),
+            'expected_goals_team2': round(avg_goals_t2, 2),
+            'std_goals_team1': round(std_goals_t1, 2),
+            'std_goals_team2': round(std_goals_t2, 2),
+            'over_2_5_probability': round(over_2_5_prob, 2),
+            'under_2_5_probability': round(under_2_5_prob, 2)
+        }
+
+        app.logger.info(f"Monte Carlo completado: BTTS {btts_probability:.2f}%")
+        return jsonify(response)
+
+    except Exception as e:
+        app.logger.error(f"Error en Monte Carlo: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @app.errorhandler(404)

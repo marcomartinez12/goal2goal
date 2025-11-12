@@ -7,6 +7,8 @@ requests
 python-dotenv
 matplotlib
 numpy
+beautifulsoup4
+lxml
 gunicorn
 Werkzeug
 Jinja2
@@ -26,3 +28,4 @@ pyparsing
 python-dateutil
 six
 urllib3
+soupsieve
