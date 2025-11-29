@@ -2672,3 +2672,115 @@ input[type="password"] {
         justify-content: center;
     }
 }
+
+/* ============================================
+   ESTILOS PARA LOGOS DE EQUIPOS
+   ============================================ */
+
+#team1-logo-container,
+#team2-logo-container {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 2px solid var(--border-light);
+    transition: all 0.3s ease;
+}
+
+#team1-logo-container:hover,
+#team2-logo-container:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-cyan);
+    box-shadow: 0 4px 12px rgba(0, 160, 227, 0.2);
+}
+
+#team1-logo,
+#team2-logo {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+    transition: transform 0.3s ease;
+}
+
+#team1-logo:hover,
+#team2-logo:hover {
+    transform: scale(1.05);
+}
+
+#team1-search-status,
+#team2-search-status {
+    display: block;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+/* ===================================
+   CHATBOT FLOTANTE
+   =================================== */
+.chatbot-float-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00a0e3, #0077b6);
+    border: 3px solid #00d4ff;
+    color: white;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(0, 160, 227, 0.6),
+                0 0 40px rgba(0, 212, 255, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    animation: chatbotPulse 2s ease-in-out infinite;
+}
+
+.chatbot-float-btn:hover {
+    transform: scale(1.1) translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0, 160, 227, 0.8),
+                0 0 50px rgba(0, 212, 255, 0.6);
+    background: linear-gradient(135deg, #00d4ff, #00a0e3);
+}
+
+.chatbot-float-btn:active {
+    transform: scale(0.95);
+}
+
+.chatbot-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff6636;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 12px;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(255, 102, 54, 0.6);
+}
+
+@keyframes chatbotPulse {
+    0%, 100% {
+        box-shadow: 0 8px 25px rgba(0, 160, 227, 0.6),
+                    0 0 40px rgba(0, 212, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 8px 25px rgba(0, 160, 227, 0.8),
+                    0 0 50px rgba(0, 212, 255, 0.6);
+    }
+}
+
+/* Responsive - móvil */
+@media (max-width: 768px) {
+    .chatbot-float-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+        bottom: 20px;
+        left: 20px;
+    }
+}

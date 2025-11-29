@@ -584,9 +584,19 @@
             <p>Análisis paso a paso del proceso matemático</p>
 
             <div class="match-info">
-                <span class="team-name">{{ data.team1.name }}</span>
+                <div style="text-align: center;">
+                    {% if data.team1.logo %}
+                    <img src="{{ data.team1.logo }}" alt="{{ data.team1.name }}" style="max-width: 60px; max-height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+                    {% endif %}
+                    <span class="team-name">{{ data.team1.name }}</span>
+                </div>
                 <span class="vs">VS</span>
-                <span class="team-name">{{ data.team2.name }}</span>
+                <div style="text-align: center;">
+                    {% if data.team2.logo %}
+                    <img src="{{ data.team2.logo }}" alt="{{ data.team2.name }}" style="max-width: 60px; max-height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+                    {% endif %}
+                    <span class="team-name">{{ data.team2.name }}</span>
+                </div>
             </div>
         </div>
 

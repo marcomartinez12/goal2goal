@@ -217,120 +217,176 @@ def get_explanation():
         confidence = btts.get('confidence', 'Media')
         diff_models = btts.get('diffModels', 0)
 
-        # Construir prompt para la API enfocado en BTTS
+        # Construir prompt simplificado
         prompt = f"""
-Actúa como un analista deportivo experto especializado en predicciones de BTTS (Both Teams To Score - Ambos Marcan).
+Eres un analista deportivo que explica predicciones BTTS de forma SIMPLE y DIRECTA, como si le explicaras a alguien que nunca ha apostado.
 
-PARTIDO: {team1['name']} vs {team2['name']}
+ESTILO:
+- Habla simple y claro, como un amigo explicando
+- Usa frases cortas: "Déjame explicarte...", "Mira...", "Ojo con esto..."
+- Explica con ejemplos simples
+- Sin palabras complicadas
 
-ANÁLISIS ESTADÍSTICO:
+📊 DATOS DEL PARTIDO: {team1['name']} vs {team2['name']}
 
-Equipo Local - {team1['name']}:
-- Goles promedio anotados: {team1['stats']['goalsScored']}
-- Goles promedio recibidos: {team1['stats']['goalsConceded']}
-- Posesión de balón: {team1['stats']['possession']}%
-- Tiros a puerta por partido: {team1['stats']['shotsOnTarget']}
-- Precisión de pases: {team1['stats']['passingAccuracy']}%
-- Lambda (tasa goles esperados): {team1['lambda']}
-- Probabilidad de marcar ≥1 gol: {team1['probScores']}%
+🏠 {team1['name']} (Local):
+• Goles anotados/partido: {team1['stats']['goalsScored']}
+• Goles recibidos/partido: {team1['stats']['goalsConceded']}
+• Posesión: {team1['stats']['possession']}%
+• Tiros a puerta: {team1['stats']['shotsOnTarget']}
+• Precisión pases: {team1['stats']['passingAccuracy']}%
+• Lambda λ: {team1['lambda']}
+• P(marcar ≥1 gol): {team1['probScores']}%
 
-Equipo Visitante - {team2['name']}:
-- Goles promedio anotados: {team2['stats']['goalsScored']}
-- Goles promedio recibidos: {team2['stats']['goalsConceded']}
-- Posesión de balón: {team2['stats']['possession']}%
-- Tiros a puerta por partido: {team2['stats']['shotsOnTarget']}
-- Precisión de pases: {team2['stats']['passingAccuracy']}%
-- Lambda (tasa goles esperados): {team2['lambda']}
-- Probabilidad de marcar ≥1 gol: {team2['probScores']}%
+✈️ {team2['name']} (Visitante):
+• Goles anotados/partido: {team2['stats']['goalsScored']}
+• Goles recibidos/partido: {team2['stats']['goalsConceded']}
+• Posesión: {team2['stats']['possession']}%
+• Tiros a puerta: {team2['stats']['shotsOnTarget']}
+• Precisión pases: {team2['stats']['passingAccuracy']}%
+• Lambda λ: {team2['lambda']}
+• P(marcar ≥1 gol): {team2['probScores']}%
 
-RESULTADOS DE LOS MODELOS PREDICTIVOS:
-- Modelo de Poisson Bivariado: {poisson_prob}% de probabilidad de BTTS
-- Modelo de Regresión Logística: {logistic_prob}% de probabilidad de BTTS
-- Diferencia entre modelos: {diff_models}%
+🎯 RESULTADOS PREDICTIVOS:
+• Poisson Bivariado: {poisson_prob}% BTTS
+• Regresión Logística: {logistic_prob}% BTTS
+• Predicción Final: {final_prob}% BTTS
+• Modelo recomendado: {recommended_model}
+• Confianza: {confidence}
 
-PREDICCIÓN FINAL:
-- Probabilidad de que AMBOS EQUIPOS MARQUEN: {final_prob}%
-- Modelo recomendado: {recommended_model}
-- Nivel de confianza: {confidence}
+GENERA 5 SECCIONES EN HTML (más completas pero no largas):
 
-Por favor, proporciona una explicación detallada en formato HTML que incluya:
+1️⃣ MI VEREDICTO 🎯
+Banner con {final_prob}% y si es "MUY PROBABLE" / "PROBABLE" / "50/50" / "POCO PROBABLE"
+1-2 párrafos explicando por qué llegaste a esa conclusión
 
-Porque esas estasdisticas son necesarias para predecir BTTS y luego los siguientes puntos:
+2️⃣ ¿CÓMO FUNCIONA ESTO? 🧮
+2-3 párrafos explicando:
+- Qué es el modelo de Poisson (en palabras simples, como analogía)
+- Qué significa Lambda de {team1['name']} ({team1['lambda']}) y de {team2['name']} ({team2['lambda']})
+- Por qué estos números nos dicen si marcarán ambos equipos
 
-1. **Cómo se Calculó la Predicción**:
-   - Explica paso a paso cómo funcionan los modelos matemáticos utilizados (Poisson Bivariado y Regresión Logística)
-   - Describe cómo se calcula el Lambda (tasa de goles esperados) usando la fórmula: (goles_anotados_equipo × goles_recibidos_rival) / promedio_liga
-   - Explica cómo el modelo de Poisson usa la distribución de probabilidad para calcular P(≥1 gol) = 1 - P(0 goles) = 1 - e^(-lambda)
-   - Menciona que la Simulación Monte Carlo ejecuta 10,000 simulaciones aleatorias del partido usando la distribución de Poisson para obtener intervalos de confianza más robustos
+3️⃣ ANÁLISIS DE LOS EQUIPOS ⚽
+2-3 párrafos analizando:
+- Ataque: {team1['name']} anota {team1['stats']['goalsScored']} y {team2['name']} anota {team2['stats']['goalsScored']} - ¿qué significa?
+- Defensa: {team1['name']} recibe {team1['stats']['goalsConceded']} y {team2['name']} recibe {team2['stats']['goalsConceded']} - ¿son frágiles?
+- ¿Por qué esto importa para BTTS?
 
-2. **Análisis Ofensivo**: Evalúa la capacidad goleadora de ambos equipos basándote en sus estadísticas ofensivas (goles anotados, tiros a puerta, precisión de pases).
+4️⃣ FACTORES CLAVE 🔑
+2 párrafos con los 2-3 factores más importantes de ESTE partido específico
 
-3. **Análisis Defensivo**: Analiza las vulnerabilidades defensivas de cada equipo (goles recibidos). ¿Son defensas porosas que facilitan que el rival anote?
+5️⃣ MI RECOMENDACIÓN FINAL ✅
+Banner de color (verde si >65%, amarillo 45-65%, rojo <45%)
+2 párrafos:
+- Párrafo 1: Mi veredicto (¿apostar o no? ¿por qué?)
+- Párrafo 2: IMPORTANTE - Mensaje sobre juego responsable: "Este análisis es educativo. No incitamos a la ludopatía. Si apuestas, hazlo con responsabilidad y solo con dinero que puedas perder. Si sientes que tienes un problema, busca ayuda."
 
-4. **Factores clave**: ¿Qué estadísticas específicas son más determinantes para predecir BTTS en este partido?
+REGLAS:
 
-5. **Recomendación final**: Basándote en el análisis, ¿qué tan probable es realmente que ambos equipos marquen? ¿Hay concordancia entre los modelos?
+✅ Párrafos de 3-4 líneas (ni muy cortos ni muy largos)
+✅ Habla simple pero explicativo: "Mira...", "Déjame explicarte...", "Lo importante es..."
+✅ Sin palabras técnicas complicadas
+✅ Explica el POR QUÉ de cada número
+✅ Sé educativo pero directo
 
-FORMATO DE RESPUESTA:
-- Usa HTML para dar formato (etiquetas <h3>, <p>, <strong>, <em>, <ul>, <li>)
-- Usa iconos de emojis para hacer la explicación más visual
-- Incluye secciones claramente separadas con encabezados
-- Sé conciso pero informativo, usa un tono profesional pero amigable
-"""
+FORMATO HTML:
+❌ NO uses ```html o ```
+❌ NO uses markdown (**, ##, -)
+✅ Empieza directo con <div>
+✅ Colores según probabilidad:
+   - Verde #27ae60 (>65% BTTS)
+   - Amarillo #f39c12 (45-65% BTTS)
+   - Rojo #e74c3c (<45% BTTS)
+✅ Cada sección: <div style="background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+✅ Párrafos: <p style="color: #ecf0f1; font-size: 1.05rem; line-height: 1.7; margin-bottom: 12px;">
+✅ Títulos: <h3 style="color: #00d4ff; font-size: 1.4rem; margin-bottom: 15px;">
+
+LONGITUD:
+✅ Máximo 2500 tokens (completa pero no excesiva)
+✅ 5 secciones TODAS completas
+✅ NO cortes antes del final
+✅ SIEMPRE incluye el mensaje de juego responsable al final"""
 
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {OPENROUTER_API_KEY}"
         }
 
-        # Lista de modelos a probar, en orden de preferencia
+        # Modelos gratuitos de OpenRouter (en orden de preferencia)
         fallback_models = [
-        "meta-llama/llama-4-maverick:free",
-        "mistralai/mistral-small-24b-instruct-2501:free",
-        "moonshotai/kimi-vl-a3b-thinking:free",
-        
+            "x-ai/grok-4.1-fast:free",  # Intentar primero con Grok
+            "meta-llama/llama-3.2-3b-instruct:free"  # Fallback a Meta Llama
         ]
 
-        
-        # Intentar con cada modelo hasta que uno funcione
         explanation = None
+
         for model in fallback_models:
+            app.logger.info(f"Probando modelo: {model}")
+
             try:
                 payload = {
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "Eres un analista deportivo experto especializado en predicciones BTTS (Both Teams To Score - Ambos Marcan). Proporcionas explicaciones detalladas en formato HTML sobre cómo funcionan los modelos estadísticos: Poisson Bivariado, Regresión Logística y Simulación Monte Carlo. Explicas los conceptos matemáticos de forma clara y accesible."},
+                        {"role": "system", "content": "Eres un analista deportivo que explica predicciones BTTS de forma simple pero completa. Hablas como un amigo que enseña a un principiante. Usas lenguaje claro, sin tecnicismos complejos. Escribes en HTML con estilos inline. Párrafos de 3-4 líneas. Explicas el POR QUÉ de cada número con ejemplos simples. Das contexto a las estadísticas. IMPORTANTE: Siempre incluyes mensaje de juego responsable al final. Respondes COMPLETO en máximo 2500 tokens. NUNCA cortes la respuesta antes de terminar."},
                         {"role": "user", "content": prompt}
                     ],
-                    "temperature": 0.7,
-                    "max_tokens": 2000
+                    "temperature": 0.65,
+                    "max_tokens": 2800
                 }
 
-                app.logger.info(f"Enviando solicitud a OpenRouter con modelo {model}")
                 response = requests.post(
                     OPENROUTER_API_URL,
                     headers=headers,
                     json=payload,
-                    timeout=None
+                    timeout=90
                 )
 
                 if response.status_code == 200:
                     result = response.json()
                     if 'choices' in result and result['choices']:
                         explanation = result['choices'][0]['message']['content']
-                        app.logger.info(f"Respuesta exitosa del modelo {model}")
-                        break
+
+                        # Limpiar bloques de código markdown si existen
+                        explanation = explanation.strip()
+                        if explanation.startswith('```html'):
+                            explanation = explanation[7:]  # Remover ```html
+                        elif explanation.startswith('```'):
+                            explanation = explanation[3:]  # Remover ```
+                        if explanation.endswith('```'):
+                            explanation = explanation[:-3]  # Remover ``` al final
+                        explanation = explanation.strip()
+
+                        app.logger.info(f"✅ Respuesta exitosa del modelo {model}")
+                        break  # Salir del loop, encontramos respuesta
                     else:
                         app.logger.warning(f"Respuesta vacía del modelo {model}: {result}")
+                        continue  # Probar siguiente modelo
+
+                elif response.status_code == 429:
+                    app.logger.warning(f"⚠️ Modelo {model} con rate limit (429), probando siguiente...")
+                    continue  # Probar siguiente modelo
+
+                elif response.status_code == 404:
+                    app.logger.warning(f"⚠️ Modelo {model} no existe (404), probando siguiente...")
+                    continue  # Probar siguiente modelo
+
+                elif response.status_code in [502, 503]:
+                    app.logger.warning(f"⚠️ Error del servidor con {model} ({response.status_code}), probando siguiente...")
+                    continue  # Probar siguiente modelo
+
                 else:
-                    app.logger.warning(f"Error con el modelo {model}: {response.status_code} - {response.text}")
-            
+                    app.logger.warning(f"❌ Error con el modelo {model}: {response.status_code} - {response.text}")
+                    continue  # Probar siguiente modelo
+
             except Exception as e:
-                app.logger.warning(f"Error al usar el modelo {model}: {e}")
-                continue
+                app.logger.warning(f"❌ Excepción con modelo {model}: {e}")
+                continue  # Probar siguiente modelo
 
         if not explanation:
-            return jsonify({"error": "No se pudo obtener una respuesta de ningún modelo disponible"}), 500
+            app.logger.error("❌ Todos los modelos fallaron")
+            return jsonify({
+                "error": "Los modelos de IA están temporalmente ocupados. Por favor, intenta nuevamente en unos segundos."
+            }), 503
 
         elapsed_time = time.time() - start_time
         app.logger.info(f"Análisis completado en {elapsed_time:.2f}s")
@@ -554,7 +610,7 @@ def monte_carlo_simulation():
         # Extraer datos de los equipos
         team1 = data.get('team1', {})
         team2 = data.get('team2', {})
-        n_simulations = data.get('simulations', 10000)
+        n_simulations = data.get('simulations', 1000000)
 
         app.logger.info(f"Iniciando simulación Monte Carlo con {n_simulations} iteraciones")
 

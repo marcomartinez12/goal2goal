@@ -449,6 +449,10 @@ async function calculatePrediction() {
     await typeTerminalText(terminal, `<span class="info">Nivel de confianza:</span> <span class="highlight">${confidence}</span>`);
     await typeTerminalText(terminal, `\n$ <span class="highlight">PREDICCIÓN FINAL: ${finalBTTSProb.toFixed(2)}% de probabilidad de que AMBOS EQUIPOS MARQUEN</span>`);
     
+    // Obtener URLs de los logos desde el caché
+    const team1Logo = document.getElementById('team1-logo').src || null;
+    const team2Logo = document.getElementById('team2-logo').src || null;
+
     // Guardar resultados para la API
     currentResults = {
         team1: {
@@ -456,14 +460,16 @@ async function calculatePrediction() {
             stats: stats1,
             lambda: lambda1,
             probScores: (probTeam1Scores * 100).toFixed(2),
-            detailedCalculation: detailedCalc1
+            detailedCalculation: detailedCalc1,
+            logo: team1Logo
         },
         team2: {
             name: team2,
             stats: stats2,
             lambda: lambda2,
             probScores: (probTeam2Scores * 100).toFixed(2),
-            detailedCalculation: detailedCalc2
+            detailedCalculation: detailedCalc2,
+            logo: team2Logo
         },
         btts: {
             poisson: bttsPoisson.toFixed(2),
@@ -513,18 +519,26 @@ async function calculatePrediction() {
         }
     }, 300);
 
-    // Nota informativa según diferencia de modelos
+    // Nota informativa según diferencia de modelos (mejorada)
     let noteText = "";
-    if (diffModels < 10) {
-        noteText = "Los modelos coinciden con alta precisión. Alta confianza en la predicción.";
-    } else if (diffModels < 20) {
-        noteText = "Los modelos muestran diferencias moderadas. Confianza media.";
+    let noteClass = "";
+
+    if (diffModels < 5) {
+        noteText = "✅ Ambos modelos coinciden. Alta confianza en la predicción.";
+        noteClass = "text-success";
+    } else if (diffModels < 15) {
+        noteText = `⚠️ Diferencia moderada de ${diffModels.toFixed(1)}%. Confianza media - considera otros factores.`;
+        noteClass = "text-warning";
     } else {
-        noteText = "Los modelos difieren significativamente. Se recomienda analizar con cuidado.";
+        noteText = `❌ Diferencia alta de ${diffModels.toFixed(1)}%. Los modelos no concuerdan - analiza con precaución.`;
+        noteClass = "text-danger";
     }
 
     const modelNoteElem = document.getElementById('model-note');
-    if (modelNoteElem) modelNoteElem.textContent = noteText;
+    if (modelNoteElem) {
+        modelNoteElem.textContent = noteText;
+        modelNoteElem.className = noteClass + ' mt-2';
+    }
 
     // Crear gráfico de comparación con animación
     createComparisonChart(team1, team2, stats1, stats2);
@@ -966,7 +980,7 @@ async function showAIExplanation() {
         };
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutos
 
         const response = await fetch('/get_explanation', {
             method: 'POST',
@@ -998,19 +1012,31 @@ async function showAIExplanation() {
         // Mostrar la explicación HTML directamente (la IA devuelve HTML formateado)
         explanationDiv.innerHTML = data.explanation;
 
-        // Aplicar estilos adicionales para mejor visualización
-        explanationDiv.style.lineHeight = '1.8';
-        explanationDiv.style.fontSize = '1rem';
+        // Aplicar estilos mejorados para mejor visualización
+        explanationDiv.style.lineHeight = '1.7';
+        explanationDiv.style.fontSize = '1.05rem';
+        explanationDiv.style.padding = '25px';
+        explanationDiv.style.background = 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)';
+        explanationDiv.style.borderRadius = '12px';
+        explanationDiv.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.5)';
 
-        // Scroll al inicio
-        explanationDiv.scrollTop = 0;
+        // Scroll al inicio con animación suave
+        explanationDiv.scrollTo({top: 0, behavior: 'smooth'});
 
     } catch (error) {
         loadingIndicator.style.display = 'none';
+
+        let errorMessage = error.message || 'Se produjo un error inesperado';
+
+        // Mensaje específico para timeout
+        if (error.name === 'AbortError') {
+            errorMessage = 'La solicitud tardó demasiado tiempo. Los modelos gratuitos de IA están muy ocupados. Por favor, intenta nuevamente en unos momentos.';
+        }
+
         explanationDiv.innerHTML = `
             <div class="alert alert-danger">
                 <strong>Error al cargar la explicación</strong>
-                <p>${error.message || 'Se produjo un error inesperado'}</p>
+                <p>${errorMessage}</p>
             </div>`;
     } finally {
         explanationBtn.disabled = false;
@@ -1038,61 +1064,111 @@ async function simularPartido() {
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-0">
-                        <div id="simulacion-carga" class="text-center p-4">
-                            <h4 class="mb-4">Simulando partido en vivo</h4>
-                            <div class="progress mb-4" style="height: 10px;">
-                                <div id="barra-progreso" class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-                                    role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div id="simulacion-carga" class="sim-loading-container">
+                            <div class="sim-loading-content">
+                                <div class="sim-loading-animation">
+                                    <div class="football-field">
+                                        <div class="field-line"></div>
+                                        <div class="center-circle"></div>
+                                        <div class="football-ball">⚽</div>
+                                    </div>
+                                </div>
+                                <h3 class="sim-loading-title">Simulando Partido en Vivo</h3>
+                                <div class="sim-progress-wrapper">
+                                    <div class="sim-progress-bar">
+                                        <div id="barra-progreso" class="sim-progress-fill"></div>
+                                    </div>
+                                    <div class="sim-progress-text">
+                                        <span id="progress-percentage">0%</span>
+                                    </div>
+                                </div>
+                                <div class="sim-loading-status">
+                                    <span id="texto-carga">Preparando simulación...</span>
+                                </div>
+                                <div class="sim-loading-stats">
+                                    <div class="loading-stat">
+                                        <i class="fas fa-tactics"></i>
+                                        <span>Analizando tácticas</span>
+                                    </div>
+                                    <div class="loading-stat">
+                                        <i class="fas fa-running"></i>
+                                        <span>Calculando momentum</span>
+                                    </div>
+                                    <div class="loading-stat">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>Generando eventos</span>
+                                    </div>
+                                </div>
                             </div>
-                            <p id="texto-carga" class="text-muted">Preparando simulación...</p>
                         </div>
                         
                         <div id="simulacion-resultado" style="display:none;">
-                            <!-- Cabecera del partido -->
-                            <div class="p-3 border-bottom border-secondary">
-                                <div class="text-center mb-2">
-                                    <span class="text-muted">Partido simulado Hoy</span>
-                                    <span class="badge bg-success ms-2">Finalizado</span>
+                            <!-- Cabecera del partido mejorada -->
+                            <div class="sim-result-header">
+                                <div class="sim-match-info">
+                                    <div class="match-badge">
+                                        <i class="fas fa-calendar-day"></i>
+                                        <span>Partido simulado Hoy</span>
+                                    </div>
+                                    <div class="match-status">
+                                        <span class="status-badge">
+                                            <i class="fas fa-check-circle"></i>
+                                            FINALIZADO
+                                        </span>
+                                        <span class="match-time">90'</span>
+                                    </div>
                                 </div>
-                                <div class="row align-items-center text-center">
-                                    <div class="col-4 text-end">
-                                        <h3 id="equipo-local" class="text-info"></h3>
+                                <div class="sim-scoreboard">
+                                    <div class="team-section team-home">
+                                        <img id="sim-logo-local" class="team-logo-sim" src="" alt="">
+                                        <h3 id="equipo-local" class="team-name-sim"></h3>
                                     </div>
-                                    <div class="col-4">
-                                        <div class="display-4 fw-bold">
-                                            <span id="goles-local" class="text-info"></span>
-                                            <span class="text-white">-</span>
-                                            <span id="goles-visitante" class="text-danger"></span>
+                                    <div class="score-section">
+                                        <div class="final-score">
+                                            <span id="goles-local" class="score-home"></span>
+                                            <span class="score-separator">-</span>
+                                            <span id="goles-visitante" class="score-away"></span>
                                         </div>
+                                        <div class="score-label">RESULTADO FINAL</div>
                                     </div>
-                                    <div class="col-4 text-start">
-                                        <h3 id="equipo-visitante" class="text-danger"></h3>
+                                    <div class="team-section team-away">
+                                        <img id="sim-logo-visitante" class="team-logo-sim" src="" alt="">
+                                        <h3 id="equipo-visitante" class="team-name-sim"></h3>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Contenedor principal -->
-                            <div class="row mx-0">
+
+                            <!-- Contenedor principal mejorado -->
+                            <div class="sim-content-grid">
                                 <!-- Estadísticas equipo local -->
-                                <div class="col-md-4 p-3 border-end border-secondary">
-                                    <h6 class="text-center mb-3">Estadísticas</h6>
-                                    <div id="stats-local">
+                                <div class="sim-stats-panel stats-home">
+                                    <div class="stats-header">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <h6>Estadísticas Local</h6>
+                                    </div>
+                                    <div id="stats-local" class="stats-content">
                                         <!-- Se llenará dinámicamente -->
                                     </div>
                                 </div>
-                                
+
                                 <!-- Línea de tiempo -->
-                                <div class="col-md-4 p-3">
-                                    <h6 class="text-center mb-3">Momentos Clave</h6>
-                                    <div id="momentos-partido" class="timeline">
+                                <div class="sim-timeline-panel">
+                                    <div class="timeline-header">
+                                        <i class="fas fa-list-ul"></i>
+                                        <h6>Momentos Clave</h6>
+                                    </div>
+                                    <div id="momentos-partido" class="timeline-content">
                                         <!-- Los momentos se llenarán dinámicamente -->
                                     </div>
                                 </div>
-                                
+
                                 <!-- Estadísticas equipo visitante -->
-                                <div class="col-md-4 p-3 border-start border-secondary">
-                                    <h6 class="text-center mb-3">Estadísticas</h6>
-                                    <div id="stats-visitante">
+                                <div class="sim-stats-panel stats-away">
+                                    <div class="stats-header">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <h6>Estadísticas Visitante</h6>
+                                    </div>
+                                    <div id="stats-visitante" class="stats-content">
                                         <!-- Se llenará dinámicamente -->
                                     </div>
                                 </div>
@@ -1110,80 +1186,514 @@ async function simularPartido() {
         // Agregar el modal al DOM
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Agregar estilos CSS para la línea de tiempo
-        const estilosTimeline = document.createElement('style');
-        estilosTimeline.textContent = `
-            .timeline {
+        // Agregar estilos CSS mejorados
+        const estilosSimulacion = document.createElement('style');
+        estilosSimulacion.textContent = `
+            /* ===== ESTILOS DE CARGA ===== */
+            .sim-loading-container {
+                padding: 60px 40px;
+                background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+                min-height: 500px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .sim-loading-content {
+                width: 100%;
+                max-width: 500px;
+                padding: 0 20px;
+                margin: 0 auto;
+            }
+
+            .sim-loading-animation {
+                margin-bottom: 30px;
+                display: flex;
+                justify-content: center;
+            }
+
+            .football-field {
                 position: relative;
-                max-height: 400px;
-                overflow-y: auto;
-                padding: 0 10px;
+                width: 220px;
+                height: 130px;
+                background: linear-gradient(90deg, #1a4d2e 0%, #1e5f3a 50%, #1a4d2e 100%);
+                border-radius: 12px;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
             }
-            .timeline:before {
-                content: '';
+
+            .field-line {
                 position: absolute;
-                top: 0;
-                bottom: 0;
+                top: 50%;
                 left: 50%;
-                width: 2px;
-                background: rgba(255,255,255,0.2);
-                transform: translateX(-50%);
+                transform: translate(-50%, -50%);
+                width: 3px;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.4);
             }
+
+            .center-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 60px;
+                height: 60px;
+                border: 2px solid rgba(255, 255, 255, 0.4);
+                border-radius: 50%;
+            }
+
+            .football-ball {
+                position: absolute;
+                top: 50%;
+                left: 20%;
+                transform: translate(-50%, -50%);
+                font-size: 36px;
+                animation: ballMove 2s ease-in-out infinite;
+                filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+            }
+
+            @keyframes ballMove {
+                0%, 100% { left: 20%; }
+                50% { left: 80%; }
+            }
+
+            .sim-loading-title {
+                text-align: center;
+                font-size: 1.9rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, #00a0e3, #ff6636);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin-bottom: 25px;
+                letter-spacing: 0.5px;
+            }
+
+            .sim-progress-wrapper {
+                margin-bottom: 20px;
+            }
+
+            .sim-progress-bar {
+                height: 12px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                overflow: hidden;
+                margin-bottom: 12px;
+                border: 2px solid rgba(0, 160, 227, 0.3);
+            }
+
+            .sim-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #00a0e3, #00d4ff);
+                border-radius: 10px;
+                transition: width 0.3s ease;
+                box-shadow: 0 0 15px rgba(0, 160, 227, 0.8);
+            }
+
+            .sim-progress-text {
+                text-align: center;
+                font-size: 1.3rem;
+                font-weight: 800;
+                color: #00d4ff;
+                text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            }
+
+            .sim-loading-status {
+                text-align: center;
+                font-size: 1.05rem;
+                color: #bbb;
+                margin-bottom: 30px;
+                font-weight: 500;
+            }
+
+            .sim-loading-stats {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            .loading-stat {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 15px 12px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 12px;
+                border: 2px solid rgba(0, 160, 227, 0.2);
+                flex: 1;
+                min-width: 130px;
+                max-width: 145px;
+                transition: all 0.3s ease;
+            }
+
+            .loading-stat:hover {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(0, 160, 227, 0.4);
+                transform: translateY(-2px);
+            }
+
+            .loading-stat i {
+                font-size: 28px;
+                color: #00a0e3;
+                filter: drop-shadow(0 0 8px rgba(0, 160, 227, 0.6));
+            }
+
+            .loading-stat span {
+                font-size: 0.88rem;
+                color: #bbb;
+                text-align: center;
+                font-weight: 600;
+                line-height: 1.3;
+            }
+
+            /* ===== ESTILOS DE RESULTADO ===== */
+            .sim-result-header {
+                background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+                padding: 30px 20px;
+                border-bottom: 3px solid rgba(0, 160, 227, 0.4);
+            }
+
+            .sim-match-info {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 35px;
+            }
+
+            .match-badge {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #bbb;
+                font-size: 1.2rem;
+                font-weight: 500;
+            }
+
+            .match-badge i {
+                color: #00a0e3;
+                font-size: 1.4rem;
+            }
+
+            .match-status {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .status-badge {
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 10px 24px;
+                border-radius: 25px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+            }
+
+            .match-time {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 10px 20px;
+                border-radius: 12px;
+                font-weight: 700;
+                color: #fff;
+                font-size: 1.2rem;
+            }
+
+            .sim-scoreboard {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 30px;
+                align-items: center;
+            }
+
+            .team-section {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .team-logo-sim {
+                width: 100px;
+                height: 100px;
+                object-fit: contain;
+                filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+                display: none;
+            }
+
+            .team-logo-sim[src]:not([src=""]) {
+                display: block;
+            }
+
+            .team-name-sim {
+                font-size: 2rem;
+                font-weight: 800;
+                margin: 0;
+                letter-spacing: 0.5px;
+            }
+
+            .team-home .team-name-sim {
+                color: #00a0e3;
+                text-shadow: 0 0 10px rgba(0, 160, 227, 0.3);
+            }
+
+            .team-away .team-name-sim {
+                color: #ff6636;
+                text-shadow: 0 0 10px rgba(255, 102, 54, 0.3);
+            }
+
+            .score-section {
+                text-align: center;
+            }
+
+            .final-score {
+                font-size: 6rem;
+                font-weight: 900;
+                line-height: 1;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .score-home {
+                color: #00a0e3;
+            }
+
+            .score-away {
+                color: #ff6636;
+            }
+
+            .score-separator {
+                color: rgba(255, 255, 255, 0.3);
+                font-weight: 400;
+            }
+
+            .score-label {
+                font-size: 1rem;
+                color: #888;
+                font-weight: 700;
+                letter-spacing: 2px;
+            }
+
+            .sim-content-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                background: #111;
+            }
+
+            .sim-stats-panel, .sim-timeline-panel {
+                padding: 25px 20px;
+            }
+
+            .stats-home {
+                border-right: 2px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .stats-away {
+                border-left: 2px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .stats-header, .timeline-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 25px;
+                padding-bottom: 15px;
+                border-bottom: 3px solid rgba(0, 160, 227, 0.3);
+            }
+
+            .stats-header i, .timeline-header i {
+                color: #00a0e3;
+                font-size: 1.5rem;
+            }
+
+            .stats-header h6, .timeline-header h6 {
+                margin: 0;
+                font-weight: 700;
+                color: #fff;
+                font-size: 1.1rem;
+                letter-spacing: 0.5px;
+            }
+
+            .stats-content {
+                max-height: none;
+                overflow-y: auto;
+            }
+
+            .timeline-content {
+                max-height: none;
+                overflow-y: auto;
+                padding-right: 15px;
+            }
+
+            .stat-item {
+                margin-bottom: 25px;
+            }
+
+            .stat-item .d-flex {
+                margin-bottom: 10px;
+            }
+
+            .stat-name {
+                font-size: 0.95rem;
+                color: #bbb;
+                font-weight: 500;
+            }
+
+            .stat-value {
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
+
+            .stat-bar {
+                height: 10px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 5px;
+                overflow: hidden;
+                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+
+            .stat-bar-fill {
+                height: 100%;
+                border-radius: 5px;
+                transition: width 0.6s ease;
+                box-shadow: 0 0 8px rgba(0, 160, 227, 0.4);
+            }
+
+            .stat-bar-fill.bg-info {
+                background: linear-gradient(90deg, #00a0e3, #00d4ff) !important;
+            }
+
+            .stat-bar-fill.bg-danger {
+                background: linear-gradient(90deg, #ff6636, #ff8956) !important;
+            }
+
             .momento-partido {
                 position: relative;
-                margin-bottom: 15px;
-                padding-left: 40px;
+                margin-bottom: 30px;
+                padding-left: 95px;
+                padding-bottom: 25px;
+                border-left: none;
             }
+
+            .momento-partido:last-child {
+                margin-bottom: 0;
+            }
+
             .momento-partido .minuto {
                 position: absolute;
-                left: 0;
+                left: 10px;
                 top: 0;
-                width: 30px;
-                height: 30px;
-                background: #343a40;
-                border: 2px solid #6c757d;
+                width: 70px;
+                height: 70px;
+                background: #00a0e3;
+                border: 6px solid #00d4ff;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: bold;
-                font-size: 0.8rem;
+                font-weight: 900;
+                font-size: 1.6rem;
+                color: #fff;
+                box-shadow: 0 0 30px rgba(0, 160, 227, 1), 0 6px 20px rgba(0, 0, 0, 0.7);
+                z-index: 10;
             }
+
             .momento-partido .contenido {
-                background: #2c3136;
-                padding: 10px;
-                border-radius: 5px;
+                background: rgba(255, 255, 255, 0.08);
+                padding: 15px 20px;
+                border-radius: 12px;
+                border: 2px solid rgba(255, 255, 255, 0.15);
+                font-size: 1.05rem;
+                line-height: 1.6;
+                font-weight: 600;
+                color: #fff;
             }
+
             .momento-partido.gol .minuto {
-                background: #dc3545;
-                border-color: #dc3545;
+                background: linear-gradient(135deg, #ff6636, #ff8956);
+                border-color: #ffeb3b;
+                box-shadow: 0 0 25px rgba(255, 102, 54, 1), 0 0 40px rgba(255, 235, 59, 0.6);
+                animation: goalPulse 2s ease-in-out infinite;
             }
+
+            @keyframes goalPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+
             .momento-partido.gol .contenido {
-                background: rgba(220, 53, 69, 0.2);
+                background: rgba(255, 102, 54, 0.1);
+                border-color: rgba(255, 102, 54, 0.3);
             }
-            .stat-item {
-                margin-bottom: 15px;
+
+            .momento-partido.tarjeta .minuto {
+                background: linear-gradient(135deg, #ffc107, #ffeb3b);
+                border-color: #ff9800;
+                color: #000;
+                box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+                font-weight: 900;
             }
-            .stat-name {
-                font-size: 0.9rem;
-                color: #adb5bd;
+
+            .momento-partido.info .minuto {
+                background: linear-gradient(135deg, #6c757d, #adb5bd);
+                border-color: #dee2e6;
+                box-shadow: 0 0 15px rgba(108, 117, 125, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
             }
-            .stat-value {
-                font-weight: bold;
+
+            /* Scrollbar personalizado */
+            .stats-content::-webkit-scrollbar,
+            .timeline-content::-webkit-scrollbar {
+                width: 6px;
             }
-            .stat-bar {
-                height: 6px;
-                background: rgba(255,255,255,0.1);
-                margin-top: 5px;
-                border-radius: 3px;
-                overflow: hidden;
+
+            .stats-content::-webkit-scrollbar-track,
+            .timeline-content::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 10px;
             }
-            .stat-bar-fill {
-                height: 100%;
-                border-radius: 3px;
+
+            .stats-content::-webkit-scrollbar-thumb,
+            .timeline-content::-webkit-scrollbar-thumb {
+                background: rgba(0, 160, 227, 0.5);
+                border-radius: 10px;
+            }
+
+            .stats-content::-webkit-scrollbar-thumb:hover,
+            .timeline-content::-webkit-scrollbar-thumb:hover {
+                background: rgba(0, 160, 227, 0.8);
+            }
+
+            /* Responsive */
+            @media (max-width: 992px) {
+                .sim-content-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .stats-home, .stats-away {
+                    border: none;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .sim-scoreboard {
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                }
+
+                .final-score {
+                    font-size: 3rem;
+                }
             }
         `;
-        document.head.appendChild(estilosTimeline);
+        document.head.appendChild(estilosSimulacion);
         
         // Agregar evento para nueva simulación
         const nuevaSimBtn = document.getElementById('nueva-simulacion-btn');
@@ -1221,15 +1731,18 @@ async function simularPartido() {
         "Calculando resultado final..."
     ];
     
+    const progressPercentage = document.getElementById('progress-percentage');
+
     for (let i = 0; i <= 100; i += 4) {
         barraProgreso.style.width = i + '%';
         barraProgreso.setAttribute('aria-valuenow', i);
-        
+        if (progressPercentage) progressPercentage.textContent = i + '%';
+
         if (i % 20 === 0 && i > 0 && i < 100) {
             textoCarga.textContent = frases[i/20];
         }
         if (i === 100) textoCarga.textContent = "¡Simulación completada!";
-        
+
         await new Promise(resolve => setTimeout(resolve, 80));
     }
     
@@ -1261,6 +1774,20 @@ async function simularPartido() {
     document.getElementById('equipo-visitante').textContent = team2;
     document.getElementById('goles-local').textContent = goles1;
     document.getElementById('goles-visitante').textContent = goles2;
+
+    // Agregar logos si están disponibles
+    const simLogoLocal = document.getElementById('sim-logo-local');
+    const simLogoVisitante = document.getElementById('sim-logo-visitante');
+
+    if (currentResults.team1.logo && currentResults.team1.logo !== '') {
+        simLogoLocal.src = currentResults.team1.logo;
+        simLogoLocal.style.display = 'block';
+    }
+
+    if (currentResults.team2.logo && currentResults.team2.logo !== '') {
+        simLogoVisitante.src = currentResults.team2.logo;
+        simLogoVisitante.style.display = 'block';
+    }
     
     // Mostrar estadísticas en los paneles laterales
     const statsLocal = document.getElementById('stats-local');
@@ -2917,7 +3444,7 @@ async function runMonteCarloSimulation() {
             body: JSON.stringify({
                 team1: team1Data,
                 team2: team2Data,
-                simulations: 10000
+                simulations: 1000000
             })
         });
 
@@ -2955,7 +3482,7 @@ async function runMonteCarloSimulation() {
  */
 function animateSimulationCount() {
     let count = 0;
-    const target = 10000;
+    const target = 1000000;
     const duration = 3500; // 3.5 segundos para dar tiempo a ver la animación
     const steps = 100;
     const increment = target / steps;
@@ -3013,7 +3540,7 @@ function populateScenarioMasProbable(data, bttsProb, team1Name, team2Name) {
     const detailsDiv = document.getElementById('mc-scenario-details');
 
     // Calcular número de simulaciones con BTTS
-    const totalSimulations = data.simulations || 10000;
+    const totalSimulations = data.simulations || 1000000;
     const bttsCount = Math.round((bttsProb / 100) * totalSimulations);
     const noBttsCount = totalSimulations - bttsCount;
 
@@ -3139,6 +3666,20 @@ function populateMonteCarloResults(data, team1Name, team2Name) {
     document.getElementById('mc-team2-goals').textContent = data.goals.team2_avg.toFixed(2);
     document.getElementById('mc-team2-std').textContent = data.goals.team2_std.toFixed(2);
     document.getElementById('mc-total-goals').textContent = data.goals.total_avg.toFixed(2);
+
+    // Agregar logos si están disponibles
+    const mcTeam1Logo = document.getElementById('mc-team1-logo');
+    const mcTeam2Logo = document.getElementById('mc-team2-logo');
+
+    if (currentResults.team1.logo && currentResults.team1.logo !== '') {
+        mcTeam1Logo.src = currentResults.team1.logo;
+        mcTeam1Logo.style.display = 'block';
+    }
+
+    if (currentResults.team2.logo && currentResults.team2.logo !== '') {
+        mcTeam2Logo.src = currentResults.team2.logo;
+        mcTeam2Logo.style.display = 'block';
+    }
 
     // Over/Under
     document.getElementById('mc-over-25').textContent = data.over_under.over_2_5.toFixed(2) + '%';

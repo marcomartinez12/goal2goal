@@ -47,10 +47,14 @@
                             <div class="row mb-4">
                                 <div class="col-md-6">
                                     <div class="team-container p-3 border rounded bg-light">
+                                        <div class="text-center mb-3" id="team1-logo-container" style="display: none;">
+                                            <img id="team1-logo" src="" alt="Logo Equipo 1" style="max-width: 100px; max-height: 100px; object-fit: contain;">
+                                        </div>
                                         <h4 class="text-center mb-3">Equipo Local</h4>
                                         <div class="mb-3">
                                             <label for="team1" class="form-label">Nombre del Equipo 1</label>
                                             <input type="text" class="form-control" id="team1" placeholder="Ej: Real Madrid" required>
+                                            <small class="form-text text-muted" id="team1-search-status"></small>
                                         </div>
                                         <div class="mb-3">
                                             <label for="goalsScored1" class="form-label">
@@ -128,10 +132,14 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="team-container p-3 border rounded bg-light">
+                                        <div class="text-center mb-3" id="team2-logo-container" style="display: none;">
+                                            <img id="team2-logo" src="" alt="Logo Equipo 2" style="max-width: 100px; max-height: 100px; object-fit: contain;">
+                                        </div>
                                         <h4 class="text-center mb-3">Equipo Visitante</h4>
                                         <div class="mb-3">
                                             <label for="team2" class="form-label">Nombre del Equipo 2</label>
                                             <input type="text" class="form-control" id="team2" placeholder="Ej: Barcelona" required>
+                                            <small class="form-text text-muted" id="team2-search-status"></small>
                                         </div>
                                         <div class="mb-3">
                                             <label for="goalsScored2" class="form-label">
@@ -328,7 +336,7 @@
                                 </button>
                                 <button class="btn btn-danger btn-lg ms-2" id="montecarlo-btn"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="Ejecuta 10,000 simulaciones usando distribución de Poisson para analizar probabilidades, marcadores y volatilidad">
+                                        title="Ejecuta 1,000,000 de simulaciones usando distribución de Poisson para analizar probabilidades, marcadores y volatilidad">
                                     <i class="fas fa-dice me-2"></i>Simulación Monte Carlo
                                 </button>
                                 <button class="btn btn-primary btn-lg ms-2" id="proceso-btn"
@@ -372,7 +380,7 @@
                                         <div class="modal-header montecarlo-header">
                                             <h5 class="modal-title">
                                                 <i class="fas fa-dice me-2"></i>Simulación Monte Carlo
-                                                <span class="badge bg-primary ms-2" id="mc-simulations-badge">10,000 simulaciones</span>
+                                                <span class="badge bg-primary ms-2" id="mc-simulations-badge">1,000,000 simulaciones</span>
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
@@ -400,7 +408,7 @@
                                                     <!-- Contador de simulaciones -->
                                                     <div class="loader-text mt-4">
                                                         <h3 class="mb-3">
-                                                            <span id="mc-progress-count">0</span> / 10,000
+                                                            <span id="mc-progress-count">0</span> / 1,000,000
                                                         </h3>
                                                         <h5 class="mb-3" id="mc-status-text">Inicializando simulación...</h5>
 
@@ -493,12 +501,14 @@
                                                     </h4>
                                                     <div class="mc-goals-grid">
                                                         <div class="mc-goal-card">
+                                                            <img id="mc-team1-logo" src="" alt="" style="max-width: 60px; max-height: 60px; margin-bottom: 10px; display: none;">
                                                             <div class="mc-goal-team" id="mc-team1-name">Equipo 1</div>
                                                             <div class="mc-goal-value" id="mc-team1-goals">0.00</div>
                                                             <div class="mc-goal-std">± <span id="mc-team1-std">0.00</span></div>
                                                         </div>
                                                         <div class="mc-goal-vs">VS</div>
                                                         <div class="mc-goal-card">
+                                                            <img id="mc-team2-logo" src="" alt="" style="max-width: 60px; max-height: 60px; margin-bottom: 10px; display: none;">
                                                             <div class="mc-goal-team" id="mc-team2-name">Equipo 2</div>
                                                             <div class="mc-goal-value" id="mc-team2-goals">0.00</div>
                                                             <div class="mc-goal-std">± <span id="mc-team2-std">0.00</span></div>
@@ -1079,6 +1089,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/static/js/team-logos.js"></script>
     <script src="/static/js/script.js"></script>
     <script src="/static/js/save-prediction.js"></script>
 
@@ -1109,6 +1120,32 @@
             </div>
             <div class="sim-stats sim-stats-right" id="sim-stats-visitante">
                 <!-- Estadísticas equipo visitante (rellenadas por JS) -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón flotante del chatbot -->
+    <button id="chatbot-toggle-btn" class="chatbot-float-btn" data-bs-toggle="modal" data-bs-target="#chatbotModal">
+        <i class="fas fa-comments"></i>
+        <span class="chatbot-badge">AI</span>
+    </button>
+
+    <!-- Modal del Chatbot -->
+    <div class="modal fade" id="chatbotModal" tabindex="-1" aria-labelledby="chatbotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="height: 600px; background: #1a1a1a; border: 2px solid #00a0e3;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #00a0e3, #0077b6); border-bottom: 2px solid #00a0e3;">
+                    <h5 class="modal-title text-white" id="chatbotModalLabel">
+                        <i class="fas fa-robot me-2"></i>Asistente Virtual Goal2Goal
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="height: 100%;">
+                    <iframe
+                        src="https://schoolhub.ai/es-ES/generate/chatbot/view/accc86c5-0d32-4d03-950b-96b14eb66342"
+                        style="width: 100%; height: 100%; border: none;">
+                    </iframe>
+                </div>
             </div>
         </div>
     </div>
